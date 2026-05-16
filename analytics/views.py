@@ -18,7 +18,6 @@ from .forms import ProfileUpdateForm, TradeImportForm
 from django.db.models import Sum
 from django.utils import timezone
 import uuid
-import pandas as pd
 from django.contrib import messages
 from .cloud_connector import TradeSmartCloud
 import io
@@ -27,9 +26,6 @@ import re # Added for robust number extraction
 from django.urls import reverse
 from django.core import signing # Import for encryption
 from .utils import sync_account_trades
-import yfinance as yf
-import pandas as pd
-import numpy as np
 import re
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
@@ -2131,6 +2127,10 @@ def import_trades(request):
                     return redirect('add_account')
 
                 # --- 1. LOAD DATA ROBUSTLY ---
+                # LAZY IMPORT: Only loaded when a user actually uploads a file.
+                # Keeping this at module level would bloat RAM on every page load (Render killer).
+                import pandas as pd
+
                 uploaded_file.seek(0)
                 df_raw = None
                 
@@ -2460,6 +2460,9 @@ def ai_predict_trade(request):
         try:
             # 2. FETCH INTRADAY DATA (5-Minute Candles)
             # We get the last 5 days to ensure we have enough data for indicators
+            # LAZY IMPORT: Only loaded when this AI prediction endpoint is called.
+            import yfinance as yf
+
             ticker = yf.Ticker(ticker_symbol)
             df = ticker.history(period="5d", interval="5m")
             
