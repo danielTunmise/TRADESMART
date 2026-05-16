@@ -21,3 +21,5 @@ websockets
 python-socketio
 pillow
 openpyxl
+psycopg2-binary
+dj-database-url
