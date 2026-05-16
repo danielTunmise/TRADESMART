@@ -1322,15 +1322,9 @@ def journal(request):
         if wins: stats['avg_win'] = round(sum(wins) / len(wins), 2)
         if losses: stats['avg_loss'] = round(sum(losses) / len(losses), 2)
 
-    # =========================================================
-    # 5. PAGINATION (Prevents Crash on Large Lists)
-    # =========================================================
-    paginator = Paginator(journal_trades, 50) # Show 50 trades per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
+    # RETURN RAW LIST (Pagination removed to fix frontend rendering)
     return render(request, 'journal.html', {
-        'journal_trades': page_obj,  # Pass the page object instead of full list
+        'journal_trades': journal_trades,
         'stats': stats, 
         'current_account': current_account, 
         'accounts': user_accounts

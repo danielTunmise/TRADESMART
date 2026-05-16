@@ -138,3 +138,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+# --- OVERRIDE ALL PREVIOUS EMAIL SETTINGS FOR RENDER DEPLOYMENT ---
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+EMAIL_USE_SSL = False
+EMAIL_USE_TLS = False
