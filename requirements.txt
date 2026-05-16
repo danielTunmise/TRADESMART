@@ -11,3 +11,4 @@ snaptrade-python-sdk
 gunicorn
 whitenoise
 reportlab
+python-dotenv
