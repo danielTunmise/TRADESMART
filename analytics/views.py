@@ -57,7 +57,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import PasswordResetView
 from .forms import CustomPasswordResetForm
 import traceback 
-
+import resend
+import os
 
 class CustomResetView(PasswordResetView):
     # Use our custom form that checks the DB
@@ -2540,29 +2541,26 @@ def ai_predict_trade(request):
 def send_verification_code(request):
     if request.method == 'POST':
         email = request.POST.get('email')
-        
-        # 1. Generate 6-digit code
         code = str(random.randint(100000, 999999))
         
-        # 2. Store in session with expiry (current time + 300 seconds for 5 mins)
-        # I strongly recommend 5 minutes (300s) instead of 2 (120s) for email delays
         request.session['email_code'] = code
         request.session['email_verified'] = False
         request.session['auth_email'] = email
         request.session['code_expiry'] = time.time() + 300 
 
-        # 3. Send Email
+        # --- RESEND API EXECUTION ---
         try:
-            send_mail(
-                'Your TradeSmart Verification Code',
-                f'Your verification code is: {code}. It expires in 5 minutes.',
-                settings.EMAIL_HOST_USER,
-                [email],
-                fail_silently=False,
-            )
+            resend.api_key = os.getenv('RESEND_API_KEY')
+            resend.Emails.send({
+                "from": "TradeSmart <onboarding@resend.dev>",
+                "to": email,
+                "subject": "Your TradeSmart Verification Code",
+                "html": f"<h2>Welcome to TradeSmart!</h2><p>Your verification code is: <strong>{code}</strong></p><p>It expires in 5 minutes.</p>"
+            })
             return JsonResponse({'status': 'success'})
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
+            print(f"Resend Error: {e}")
+            return JsonResponse({'status': 'error', 'message': 'Failed to send email.'})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request'})
 
@@ -2590,26 +2588,29 @@ def verify_code(request):
 def send_reset_code(request):
     if request.method == 'POST':
         email = request.POST.get('email')
-        # Check if user exists first!
         if not User.objects.filter(email=email).exists():
-            # Security: Don't reveal user doesn't exist, but don't send email
-            # Or return error if you prefer convenience over strict security
             return JsonResponse({'status': 'error', 'message': 'Email not found.'})
 
         code = str(random.randint(100000, 999999))
         request.session['reset_code'] = code
         request.session['reset_email'] = email
         request.session['reset_verified'] = False
-        request.session['reset_expiry'] = time.time() + 300 # 5 mins
+        request.session['reset_expiry'] = time.time() + 300 
 
-        send_mail(
-            'TradeSmart Password Reset',
-            f'Your password reset code is: {code}',
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
-        )
-        return JsonResponse({'status': 'success'})
+        # --- RESEND API EXECUTION ---
+        try:
+            resend.api_key = os.getenv('RESEND_API_KEY')
+            resend.Emails.send({
+                "from": "TradeSmart <onboarding@resend.dev>",
+                "to": email,
+                "subject": "TradeSmart Password Reset",
+                "html": f"<p>Your password reset code is: <strong>{code}</strong></p><p>If you did not request this, please ignore this email.</p>"
+            })
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            print(f"Resend Error: {e}")
+            return JsonResponse({'status': 'error', 'message': 'Failed to send email.'})
+        
     return JsonResponse({'status': 'error'})
 
 def verify_reset_code(request):
