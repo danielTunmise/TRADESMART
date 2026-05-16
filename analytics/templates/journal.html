@@ -1,0 +1,535 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TradeSmart | Trading Journal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- MERGED VARIABLES --- */
+        :root {
+            /* Sidebar Variables are now in sidebar.html */
+            
+            /* Main Content Variables */
+            --main-bg: #050505;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --text-main: #FFFFFF; 
+            --text-dim: #888888; 
+            --accent-green: #00FF94; 
+            --accent-red: #FF4D4D;
+            --glass-border: 1px solid rgba(255, 255, 255, 0.06);
+            --neon-green-glow: 0 0 15px rgba(0, 255, 148, 0.2);
+            --neon-red-glow: 0 0 15px rgba(255, 77, 77, 0.2);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--main-bg); 
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 255, 148, 0.03) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 100, 255, 0.03) 0%, transparent 20%);
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            opacity: 0; 
+            animation: pageFadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
+            /* Fix horizontal scroll on mobile */
+            overflow-x: hidden;
+            width: 100%;
+        }
+        
+        @keyframes pageFadeIn { to { opacity: 1; } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* --- MAIN CONTENT STYLES --- */
+        .main-content { margin-left: 280px; flex-grow: 1; padding: 50px; max-width: 1600px; box-sizing: border-box; }
+        
+        /* --- STICKY HEADER CONTAINER --- */
+        .sticky-header-container {
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            /* Dark glass effect to hide scrolling table content underneath */
+            background: rgba(5, 5, 5, 0.95); 
+            backdrop-filter: blur(15px);
+            
+            /* Negative margins to span the full width of the padded main-content */
+            margin: -50px -50px 30px -50px;
+            padding: 50px 50px 10px 50px;
+            
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Header */
+        .top-header { 
+            display: flex; justify-content: space-between; align-items: flex-end; 
+            margin-bottom: 40px; animation: fadeInUp 0.6s ease-out 0.1s forwards; opacity: 0;
+        }
+        .page-title { margin: 0; font-weight: 700; font-size: 32px; color: #fff; letter-spacing: -1px; }
+        .page-subtitle { color: var(--text-dim); margin-top: 5px; font-size: 14px; }
+
+        .btn-import { 
+            background: var(--accent-green); color: #000; padding: 12px 24px; 
+            border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 700; 
+            display: flex; align-items: center; gap: 8px; transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(0, 255, 148, 0.3); border: none;
+        }
+        .btn-import:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 255, 148, 0.5); }
+
+        /* Filter Bar - Glass Card */
+        .filter-card { 
+            background: var(--card-bg); border: var(--glass-border); 
+            padding: 20px 25px; border-radius: 16px; backdrop-filter: blur(20px);
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 20px; animation: fadeInUp 0.6s ease-out 0.2s forwards; opacity: 0;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+        }
+        
+        .filter-group { display: flex; gap: 15px; align-items: center; }
+        
+        /* Form Elements */
+        .input-glass { 
+            background: rgba(40, 40, 40, 0.9); border: 1px solid rgba(255,255,255,0.1); 
+            color: black; padding: 10px 16px; border-radius: 8px; outline: none; 
+            font-size: 13px; font-family: 'Inter'; transition: all 0.2s;
+        }
+        .input-glass:focus { border-color: var(--accent-green); background: rgba(0, 255, 148, 0.05); }
+        .input-glass::placeholder { color: rgba(255,255,255,0.3); }
+        
+        .search-box { width: 220px; }
+        
+        /* Date Input Styling */
+        input[type="date"] { color-scheme: dark; }
+        
+        /* Table Card */
+        .table-card { 
+            background: var(--card-bg); padding: 5px 30px 30px 30px; 
+            border-radius: 20px; border: var(--glass-border); 
+            backdrop-filter: blur(20px); min-height: 600px;
+            animation: fadeInUp 0.6s ease-out 0.3s forwards; opacity: 0;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.3);
+            /* Important for mobile scrolling of table */
+            overflow-x: auto; 
+        }
+        
+        /* Table Styles */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 20px; min-width: 800px; /* Force scroll on mobile */ }
+        th { 
+            text-align: left; color: var(--text-dim); font-size: 11px; font-weight: 700; 
+            text-transform: uppercase; padding: 15px 20px; letter-spacing: 1px; opacity: 0.8;
+        }
+        td { 
+            padding: 20px; background: rgba(255,255,255,0.015); font-size: 14px; 
+            border: none; transition: all 0.2s; font-weight: 500; color: #eee; 
+        }
+        
+        tr td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        tr td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+        /* Row Animation & Hover */
+        tbody tr { opacity: 0; animation: fadeInUp 0.5s ease-out forwards; cursor: pointer; }
+        tbody tr:hover td { background: rgba(255,255,255,0.06); color: #fff; transform: scale(1.01); }
+        
+        /* Badges & Text Colors */
+        .badge { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-buy { background: rgba(0, 255, 148, 0.1); color: var(--accent-green); border: 1px solid rgba(0, 255, 148, 0.2); }
+        .badge-sell { background: rgba(255, 77, 77, 0.1); color: var(--accent-red); border: 1px solid rgba(255, 77, 77, 0.2); }
+        
+        .pnl-pos { color: var(--accent-green); font-weight: 700; text-shadow: 0 0 15px rgba(0,255,148,0.25); }
+        .pnl-neg { color: var(--accent-red); font-weight: 700; text-shadow: 0 0 15px rgba(255,77,77,0.25); }
+        
+        /* Alerts - Glass Toasts */
+        .messages-container { position: fixed; top: 30px; right: 30px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+        .alert {
+            padding: 16px 24px; border-radius: 12px; color: white; min-width: 320px;
+            backdrop-filter: blur(20px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.1); font-size: 14px; font-weight: 500;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .alert-success { background: rgba(0, 255, 148, 0.15); border-left: 4px solid var(--accent-green); }
+        .alert-error { background: rgba(255, 77, 77, 0.15); border-left: 4px solid var(--accent-red); }
+        .alert-warning { background: rgba(255, 215, 0, 0.15); border-left: 4px solid #FFD700; }
+
+        .close-alert { cursor: pointer; opacity: 0.6; font-size: 18px; transition: 0.2s; }
+        .close-alert:hover { opacity: 1; transform: scale(1.1); }
+
+        /* Pagination Styles */
+        .pagination { margin-top: 20px; text-align: center; padding-bottom: 20px; }
+        .step-links { display: inline-flex; gap: 8px; align-items: center; color: var(--text-dim); font-size: 13px; }
+        .btn-page { background: rgba(255, 255, 255, 0.05); padding: 8px 14px; border-radius: 8px; color: white; text-decoration: none; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        .btn-page:hover { background: var(--accent-green); color: black; border-color: var(--accent-green); }
+        .current { margin: 0 10px; font-weight: 600; color: #fff; }
+
+        /* ========================================= */
+    /* --- MOBILE & TABLET RESPONSIVENESS --- */
+    /* ========================================= */
+    @media screen and (max-width: 1024px) {
+        body {
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* 1. Main Content Padding 
+           Calculated to clear the compact sticky header controls
+           Nav (60) + Header (~200) + Gap */
+        .main-content { 
+            margin-left: 0; 
+            width: 100%; 
+            padding: 270px 15px 15px 15px; 
+            box-sizing: border-box; 
+            display: block;
+        }
+
+        /* --- STICKY HEADER CONTAINER (The Control Panel) --- */
+        .sticky-header-container {
+            position: fixed;
+            top: 60px; /* Sits exactly below the 60px mobile navbar */
+            left: 0;
+            width: 100%;
+            z-index: 900;
+            margin: 0;
+            padding: 12px 15px; /* Compact padding */
+            background: rgba(5, 5, 5, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            
+            /* Layout: Vertical Stack */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-sizing: border-box;
+            height: auto;
+        }
+
+        /* --- TOP ROW: Title & Import Button --- */
+        .top-header {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0;
+            opacity: 1; 
+            animation: none;
+        }
+
+        .top-header > div:first-child {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .page-title { 
+            font-size: 18px; 
+            line-height: 1;
+            margin: 0;
+        }
+        
+        .page-subtitle { 
+            font-size: 10px; 
+            opacity: 0.6;
+            line-height: 1.2;
+            margin: 0;
+            display: block !important;
+        }
+
+        .btn-import { 
+            padding: 6px 12px; 
+            font-size: 10px; 
+            white-space: nowrap;
+            height: 32px;
+            box-shadow: none;
+            background: rgba(0, 255, 148, 0.1); 
+            color: var(--accent-green);
+            border: 1px solid rgba(0, 255, 148, 0.2);
+            border-radius: 8px;
+        }
+
+        /* --- FILTER SECTION --- */
+        .filter-card {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px; /* Tight gap between search and filters */
+            opacity: 1;
+            animation: none;
+        }
+
+        /* Standardize Input Styles for Mobile */
+        .input-glass {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0 12px;
+            font-size: 11px;
+            height: 36px; /* Fixed compact height */
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* Filter Group 1: Search & Dropdowns */
+        .filter-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 Columns */
+            gap: 8px;
+            width: 100%;
+        }
+
+        /* Search bar spans full width (Row 1 of filters) */
+        .search-box {
+            grid-column: span 2;
+            width: 100%;
+        }
+
+        /* Filter Group 2: Dates (Grid Row 3) */
+        .filter-group:last-child {
+            display: grid;
+            grid-template-columns: 1fr 1fr; 
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Hide labels, use placeholders */
+        .date-label { display: none; }
+
+        /* --- TABLE ADJUSTMENTS --- */
+        .table-card {
+            margin-top: 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            min-height: auto;
+            border-radius: 0;
+        }
+        
+        /* Horizontal Scroll Container */
+        .table-card {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            min-width: 600px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: var(--glass-border);
+            /* Separate border model for rounded corners */
+            border-collapse: separate; 
+            border-spacing: 0;
+        }
+
+        th { 
+            padding: 12px 15px; 
+            font-size: 10px; 
+            background: rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+        
+        td { 
+            padding: 12px 15px; 
+            font-size: 12px; 
+            white-space: nowrap;
+        }
+
+        /* Badge Adjustments */
+        .badge { padding: 4px 8px; font-size: 9px; border-radius: 4px; }
+
+        /* --- PAGINATION --- */
+        .pagination {
+            margin-top: 15px;
+            padding-bottom: 80px; /* Extra space at bottom */
+        }
+        .btn-page { padding: 6px 12px; font-size: 11px; }
+
+        /* --- POPUP POSITIONING --- */
+        .messages-container {
+            top: 70px; /* Sit just below nav */
+            right: 10px; 
+            left: 10px; 
+            width: auto;
+            z-index: 2000;
+        }
+        .alert { min-width: unset; width: 100%; box-sizing: border-box; }
+    }
+    </style>
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% else %}alert-warning{% endif %}">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 18px;">
+                        {% if message.tags == 'success' %}✨{% elif message.tags == 'error' %}⚠️{% else %}ℹ️{% endif %}
+                    </span>
+                    {{ message }}
+                </div>
+                <span class="close-alert" onclick="this.parentElement.style.opacity='0'; setTimeout(()=>this.parentElement.remove(), 300);">×</span>
+            </div>
+        {% endfor %}
+        <script>
+            setTimeout(() => {
+                document.querySelectorAll('.alert').forEach(el => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateX(100%)';
+                    el.style.transition = 'all 0.5s ease';
+                    setTimeout(() => el.remove(), 500);
+                });
+            }, 5000);
+        </script>
+    </div>
+    {% endif %}
+
+    <div class="main-content">
+        
+        <div class="sticky-header-container">
+            <div class="top-header">
+                <div>
+                    <h2 class="page-title">Trade Journal</h2>
+                    <div class="page-subtitle">Track, analyze, and refine your trading performance.</div>
+                </div>
+                
+                {% if not current_account.snaptrade_user_id %}
+                    <a href="{% url 'import_trades' %}" class="btn-import">
+                        <span>📥</span> Import History
+                    </a>
+                {% endif %}
+            </div>
+
+            <form method="GET" action="{% url 'journal' %}" id="filterForm">
+                <div class="filter-card">
+                    <div class="filter-group">
+                        <input type="text" name="q" class="input-glass search-box" placeholder="Search Symbol (e.g. EURUSD)..." value="{{ request.GET.q|default:'' }}">
+                        
+                        <select name="side" class="input-glass" onchange="this.form.submit()">
+                            <option value="all" {% if request.GET.side == 'all' %}selected{% endif %}>All Sides</option>
+                            <option value="BUY" {% if request.GET.side == 'BUY' %}selected{% endif %}>Long (Buy)</option>
+                            <option value="SELL" {% if request.GET.side == 'SELL' %}selected{% endif %}>Short (Sell)</option>
+                        </select>
+
+                        <select name="outcome" class="input-glass" onchange="this.form.submit()">
+                            <option value="all" {% if request.GET.outcome == 'all' %}selected{% endif %}>All Outcomes</option>
+                            <option value="win" {% if request.GET.outcome == 'win' %}selected{% endif %}>Winners Only</option>
+                            <option value="loss" {% if request.GET.outcome == 'loss' %}selected{% endif %}>Losses Only</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <input 
+                            name="start_date" 
+                            class="input-glass" 
+                            placeholder="From Date" 
+                            type="text" 
+                            onfocus="(this.type='date')" 
+                            onblur="(this.value ? this.type='date' : this.type='text')"
+                            value="{{ request.GET.start_date }}" 
+                            onchange="this.form.submit()"
+                        >
+                        <input 
+                            name="end_date" 
+                            class="input-glass" 
+                            placeholder="To Date" 
+                            type="text" 
+                            onfocus="(this.type='date')" 
+                            onblur="(this.value ? this.type='date' : this.type='text')"
+                            value="{{ request.GET.end_date }}" 
+                            onchange="this.form.submit()"
+                        >
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Asset / Date</th>
+                        <th>Direction</th>
+                        <th>Size (Lots)</th>
+                        <th>Entry Price</th>
+                        <th>Exit Price</th>
+                        <th>Net P&L</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in journal_trades %}
+                    <tr onclick="window.location='{% url 'trade_detail' trade.trade_id %}'" style="animation-delay: {{ forloop.counter0|add:1|default:1 }}00ms;">
+                        <td>
+                            <div style="font-weight: 700; color: white; font-size: 15px;">{{ trade.symbol }}</div>
+                            <div style="font-size:11px; color:var(--text-dim); margin-top: 4px; font-weight:500;">
+                                {{ trade.open_time|date:"M d, Y • H:i" }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge {% if trade.direction == 'BUY' %}badge-buy{% else %}badge-sell{% endif %}">
+                                {{ trade.direction }}
+                            </span>
+                        </td>
+                        <td style="color: #ccc;">{{ trade.lot_size }}</td>
+                        <td style="color: #888;">{{ trade.open_price|floatformat:2 }}</td>
+                        <td style="color: #888;">{{ trade.close_price|floatformat:2 }}</td>
+                        <td>
+                            <span class="{% if trade.profit >= 0 %}pnl-pos{% else %}pnl-neg{% endif %}" style="font-size: 15px;">
+                                {% if trade.profit > 0 %}+{% endif %}${{ trade.profit|floatformat:2 }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:80px 0; color:var(--text-dim);">
+                            <div style="font-size: 40px; margin-bottom: 15px; opacity: 0.3;">🔍</div>
+                            No trades match your current filters.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if journal_trades.has_other_pages %}
+        <div class="pagination">
+            <span class="step-links">
+                {% if journal_trades.has_previous %}
+                    <a href="?page=1&side={{ request.GET.side }}&outcome={{ request.GET.outcome }}&q={{ request.GET.q }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}" class="btn-page">&laquo; First</a>
+                    <a href="?page={{ journal_trades.previous_page_number }}&side={{ request.GET.side }}&outcome={{ request.GET.outcome }}&q={{ request.GET.q }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}" class="btn-page">Previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ journal_trades.number }} of {{ journal_trades.paginator.num_pages }}
+                </span>
+
+                {% if journal_trades.has_next %}
+                    <a href="?page={{ journal_trades.next_page_number }}&side={{ request.GET.side }}&outcome={{ request.GET.outcome }}&q={{ request.GET.q }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}" class="btn-page">Next</a>
+                    <a href="?page={{ journal_trades.paginator.num_pages }}&side={{ request.GET.side }}&outcome={{ request.GET.outcome }}&q={{ request.GET.q }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}" class="btn-page">Last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

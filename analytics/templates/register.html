@@ -1,0 +1,357 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TradeSmart | Professional Registration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ... (Your Existing CSS remains exactly the same, omitted for brevity) ... */
+        :root {
+            --sidebar-bg: rgba(5, 5, 5, 0.95);
+            --main-bg: #080808;
+            --card-bg: rgba(20, 20, 20, 0.6);
+            --text-main: #FFFFFF;
+            --text-dim: #888888;
+            --accent-green: #00FF85;
+            --accent-red: #FF4D4D;
+            --border: rgba(255, 255, 255, 0.08);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+            --neon-green-glow: 0 0 15px rgba(0, 255, 133, 0.3);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--main-bg); 
+            background-image: radial-gradient(circle at 80% 80%, rgba(0, 255, 133, 0.05) 0%, transparent 60%);
+            color: var(--text-main); 
+            margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh;
+            opacity: 0; animation: pageFadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            overflow-x: hidden;
+        }
+        
+        @keyframes pageFadeIn { to { opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
+
+        .reg-container { 
+            background: var(--card-bg); width: 550px; padding: 50px; text-align: center; 
+            border-radius: 24px; border: var(--glass-border); backdrop-filter: blur(30px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); 
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s forwards;
+            opacity: 0;
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+        
+        .login-logo { width: 150px; height: auto; margin-bottom: -15px; display: block; margin-left: auto; margin-right: auto; animation: float 6s ease-in-out infinite; }
+        h1 { font-size: 32px; font-weight: 800; margin-bottom: 10px; letter-spacing: 2px; background: linear-gradient(45deg, #fff, var(--accent-green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0,255,133,0.2); margin-top: 0; }
+        .sub-text { font-style: italic; color: var(--accent-green); margin-bottom: 30px; font-size: 13px; opacity: 0.9; letter-spacing: 0.5px; }
+        
+        .form-step { display: none; animation: slideUp 0.4s ease-out; }
+        .form-step.active { display: block; }
+        h3 { color: var(--text-dim); margin-bottom: 25px; font-weight: 600; font-size: 16px; text-transform: uppercase; letter-spacing: 2px; }
+
+        input { width: 100%; padding: 16px; margin: 8px 0; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; font-size: 14px; box-sizing: border-box; transition: all 0.3s; font-family: 'Inter', sans-serif; }
+        input:focus { border-color: var(--accent-green); outline: none; background: rgba(0, 255, 133, 0.05); box-shadow: 0 0 0 4px rgba(0, 255, 133, 0.1); }
+
+        .btn-next, .btn-submit, .btn-verify { background: var(--accent-green); color: #000; border: none; padding: 16px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 700; margin-top: 25px; transition: all 0.3s; width: 100%; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0, 255, 133, 0.2); }
+        .btn-next:hover, .btn-submit:hover, .btn-verify:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 255, 133, 0.4); }
+        .btn-loading { opacity: 0.7; cursor: wait; pointer-events: none; }
+
+        /* OTP Input Special Styling */
+        .otp-input { letter-spacing: 15px; font-size: 24px; text-align: center; font-weight: 700; }
+
+        .risk-options { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
+        .risk-btn { border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; cursor: pointer; transition: all 0.3s; background: rgba(0,0,0,0.3); color: var(--text-dim); font-size: 13px; flex: 1; font-weight: 500; }
+        .risk-btn:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-2px); }
+        .risk-btn.selected { border-color: var(--accent-green); color: var(--accent-green); background: rgba(0, 255, 133, 0.15); font-weight: 700; box-shadow: 0 0 15px rgba(0, 255, 133, 0.1); }
+
+        .error-msg { color: var(--accent-red); font-size: 13px; margin-bottom: 20px; background: rgba(255, 77, 77, 0.1); padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 77, 77, 0.2); display: none; }
+        
+        /* Updated Dots for 4 Steps */
+        .progress-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 10px; margin-top: 20px;}
+        .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 50%; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .dot.active { background: var(--accent-green); width: 24px; border-radius: 10px; box-shadow: 0 0 10px var(--accent-green); }
+        
+        .back-link { margin-top: 20px; font-size: 13px; color: var(--text-dim); cursor: pointer; transition: 0.2s; display: inline-block; }
+        .back-link:hover { color: white; transform: translateX(-3px); }
+
+        /* ========================================= */
+        /* --- MOBILE & TABLET RESPONSIVENESS --- */
+        /* ========================================= */
+        @media screen and (max-width: 600px) {
+            body {
+                align-items: center; 
+                padding: 20px 0; /* Add vertical padding so card isn't edge-to-edge */
+            }
+
+            .reg-container {
+                width: 90%; /* Fluid width for smaller screens */
+                padding: 40px 25px; /* Reduce padding inside the card */
+                margin: 0 auto;
+                max-width: 400px;
+            }
+
+            h1 { font-size: 28px; }
+            .login-logo { width: 120px; }
+            
+            /* Stack risk buttons if screen is very narrow */
+            .risk-options {
+                flex-direction: row; /* Keep row for standard mobile width */
+                flex-wrap: wrap; /* Wrap if too small */
+            }
+            .risk-btn {
+                min-width: 80px;
+                padding: 12px;
+                font-size: 12px;
+            }
+            
+            input { padding: 14px; font-size: 16px; /* Prevent iOS zoom */ }
+            .otp-input { font-size: 20px; letter-spacing: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="reg-container">
+    <div class="progress-dots">
+        <div class="dot active" id="dot1"></div>
+        <div class="dot" id="dot2"></div>
+        <div class="dot" id="dot3"></div>
+        <div class="dot" id="dot4"></div>
+    </div>
+
+    <img src="{% static 'images/logo.png' %}" alt="TradeSmart Logo" class="login-logo">
+
+    <h1>TRADESMART</h1>
+    <div class="sub-text">"It only gets better when you get better"</div>
+    
+    <div class="error-msg" id="globalError" {% if error %}style="display:block;"{% endif %}>{{ error|default:"" }}</div>
+
+    <form method="post" id="regForm">
+        {% csrf_token %}
+        
+        <div class="form-step active" id="step1">
+            <input type="text" name="first_name" id="fname" placeholder="First Name" value="{{ request.POST.first_name }}" required>
+            <input type="text" name="last_name" id="lname" placeholder="Last Name" value="{{ request.POST.last_name }}" required>
+            <input type="email" name="email" id="email" placeholder="Email Address" value="{{ request.POST.email }}" required>
+            <input type="text" name="username" id="username" placeholder="Username / Handle" value="{{ request.POST.username }}" required>
+            
+            <button type="button" class="btn-next" id="btnStep1" onclick="initiateEmailVerification()">Continue →</button>
+        </div>
+
+        <div class="form-step" id="step2">
+            <h3>Verify Email</h3>
+            <p style="color:var(--text-dim); font-size:13px; margin-bottom:20px;">
+                We sent a 6-digit code to <span id="displayEmail" style="color:white; font-weight:700;"></span>.<br>It expires in <span style="color:var(--accent-green);">5 minutes</span>.
+            </p>
+            <input type="text" name="verification_code" id="otpCode" class="otp-input" placeholder="000000" maxlength="6" required>
+            
+            <button type="button" class="btn-verify" id="btnVerify" onclick="verifyCodeAndProceed()">Verify Code</button>
+            <div class="back-link" onclick="prevStep(1)">← Change Email</div>
+        </div>
+
+        <div class="form-step" id="step3">
+            <h3>Secure Your Account</h3>
+            <input type="password" name="password" id="pass1" placeholder="Create Password" required>
+            <input type="password" name="password_confirm" id="pass2" placeholder="Confirm Password" required>
+            
+            <button type="button" class="btn-next" onclick="validatePasswordsAndProceed()">Continue →</button>
+            <div class="back-link" onclick="prevStep(2)">← Back</div>
+        </div>
+
+        <div class="form-step" id="step4">
+            <h3>Risk Configuration</h3>
+            <p style="color: var(--text-dim); font-size: 13px; margin-bottom: 20px;">Select your preferred risk per trade:</p>
+            
+            <div class="risk-options">
+                <input type="hidden" name="risk_appetite" id="risk_val" value="moderate">
+                <div class="risk-btn selected" id="btn-moderate" onclick="selectRisk('moderate', this)">
+                    <div style="font-size:16px; margin-bottom:5px;">1-2%</div>Moderate
+                </div>
+                <div class="risk-btn" id="btn-conservative" onclick="selectRisk('conservative', this)">
+                    <div style="font-size:16px; margin-bottom:5px;">&lt;1%</div>Safe
+                </div>
+                <div class="risk-btn" id="btn-aggressive" onclick="selectRisk('aggressive', this)">
+                    <div style="font-size:16px; margin-bottom:5px;">&gt;2%</div>Aggr.
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-submit">Complete Registration</button>
+            <div class="back-link" onclick="prevStep(3)">← Back</div>
+        </div>
+    </form>
+
+    <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: var(--text-dim);">
+        Already have an account? <a href="{% url 'login' %}" style="color: var(--accent-green); text-decoration: none; font-weight:600; margin-left: 5px;">Login here</a>
+    </div>
+</div>
+
+<script>
+    function showError(msg) {
+        const errDiv = document.getElementById('globalError');
+        errDiv.innerText = msg;
+        errDiv.style.display = 'block';
+        setTimeout(() => errDiv.style.display = 'none', 5000);
+    }
+
+    function updateDots(step) {
+        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+        document.getElementById('dot' + step).classList.add('active');
+    }
+
+    // --- STEP 1: SEND EMAIL LOGIC ---
+    function initiateEmailVerification() {
+        const email = document.getElementById('email').value;
+        const fname = document.getElementById('fname').value;
+        const lname = document.getElementById('lname').value;
+        const username = document.getElementById('username').value;
+        const btn = document.getElementById('btnStep1');
+
+        if(!email || !fname || !lname || !username) {
+            showError("Please fill in all fields.");
+            return;
+        }
+        if(!email.includes('@')) {
+            showError("Invalid email address.");
+            return;
+        }
+
+        // UX: Show loading
+        btn.innerHTML = "Sending Code...";
+        btn.classList.add('btn-loading');
+
+        // AJAX to send code
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        fetch('/api/send-verification-code/', {  // Make sure to map this URL in urls.py
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.classList.remove('btn-loading');
+            btn.innerHTML = "Continue →";
+            
+            if(data.status === 'success') {
+                document.getElementById('displayEmail').innerText = email;
+                nextStep(2); // Proceed to verification step
+            } else {
+                showError(data.message || "Failed to send email.");
+            }
+        })
+        .catch(error => {
+            btn.classList.remove('btn-loading');
+            btn.innerHTML = "Continue →";
+            showError("Network error. Please try again.");
+        });
+    }
+
+    // --- STEP 2: VERIFY CODE LOGIC ---
+    function verifyCodeAndProceed() {
+        const code = document.getElementById('otpCode').value;
+        const btn = document.getElementById('btnVerify');
+
+        if(code.length !== 6) {
+            showError("Please enter the 6-digit code.");
+            return;
+        }
+
+        btn.innerHTML = "Verifying...";
+        btn.classList.add('btn-loading');
+
+        const formData = new FormData();
+        formData.append('code', code);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        fetch('/api/verify-email-code/', { // Make sure to map this URL in urls.py
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.classList.remove('btn-loading');
+            btn.innerHTML = "Verify Code";
+
+            if(data.status === 'success') {
+                nextStep(3); // Proceed to Password
+            } else {
+                showError(data.message || "Invalid or expired code.");
+            }
+        })
+        .catch(error => {
+            btn.classList.remove('btn-loading');
+            btn.innerHTML = "Verify Code";
+            showError("Verification failed. Try again.");
+        });
+    }
+
+    // --- PASSWORD VALIDATION LOGIC ---
+    function validatePasswordsAndProceed() {
+        const pass1 = document.getElementById('pass1').value;
+        const pass2 = document.getElementById('pass2').value;
+
+        if (!pass1 || !pass2) {
+            showError("Please fill out both password fields.");
+            return;
+        }
+
+        if (pass1 !== pass2) {
+            showError("Passwords do not match!");
+            return;
+        }
+
+        if (pass1.length < 8) {
+            showError("Password must be at least 8 characters long.");
+            return;
+        }
+
+        // If everything is good, move to the final step
+        nextStep(4);
+    }
+
+    function nextStep(step) {
+        // Hide all steps
+        document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+        // Show next step
+        const next = document.getElementById('step' + step);
+        next.classList.add('active');
+        
+        // Only run validation for standard inputs on the current step if not handled by AJAX
+        if (step > 2) {
+             const inputs = next.querySelectorAll('input[required]');
+             // (Add standard validation here if needed for password steps)
+        }
+        
+        updateDots(step);
+    }
+
+    function prevStep(step) {
+        document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step' + step).classList.add('active');
+        updateDots(step);
+    }
+
+    function selectRisk(val, btn) {
+        document.getElementById('risk_val').value = val;
+        document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    }
+    
+    // Add keyframes for shake dynamically
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = `
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    `;
+    document.head.appendChild(styleSheet);
+</script>
+
+</body>
+</html>

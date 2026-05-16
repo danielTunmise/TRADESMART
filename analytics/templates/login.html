@@ -1,0 +1,210 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TradeSmart | Professional Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: rgba(5, 5, 5, 0.95);
+            --main-bg: #080808;
+            --card-bg: rgba(20, 20, 20, 0.6);
+            --text-main: #FFFFFF;
+            --text-dim: #888888;
+            --accent-green: #00FF85;
+            --accent-red: #FF4D4D;
+            --border: rgba(255, 255, 255, 0.08);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+            --neon-green-glow: 0 0 15px rgba(0, 255, 133, 0.3);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--main-bg); 
+            background-image: radial-gradient(circle at 50% 50%, rgba(0, 255, 133, 0.03) 0%, transparent 60%);
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh;
+            opacity: 0; 
+            animation: pageFadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            overflow-x: hidden;
+        }
+        
+        @keyframes pageFadeIn { to { opacity: 1; } }
+        @keyframes popIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .login-container { 
+            background: var(--card-bg); 
+            width: 550px; 
+            padding: 10px; 
+            text-align: center; 
+            border-radius: 24px; 
+            border: var(--glass-border);
+            backdrop-filter: blur(30px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); 
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s forwards;
+            opacity: 0;
+            box-sizing: border-box; /* Ensure padding is included in width */
+        }
+        
+        /* --- LOGO STYLING --- */
+        .login-logo {
+            width: 150px;
+            height: auto;
+            /* Negative margin pulls the text up closer */
+            margin-bottom: -10px; 
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        h1 { 
+            font-size: 32px; font-weight: 800; margin-bottom: 10px; letter-spacing: 2px; 
+            background: linear-gradient(45deg, #fff, var(--accent-green)); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0,255,133,0.2);
+            margin-top: 0; 
+        }
+        
+        .sub-text { 
+            font-style: italic; color: var(--accent-green); margin-bottom: 40px; 
+            font-size: 13px; opacity: 0.9; letter-spacing: 0.5px;
+        }
+        
+        h3 { 
+            color: var(--text-dim); margin-bottom: 30px; font-weight: 600; 
+            font-size: 14px; text-transform: uppercase; letter-spacing: 2px; 
+        }
+        
+        /* Input Styling */
+        input[type="text"], input[type="password"] { 
+            width: 100%; padding: 16px; margin: 8px 0; 
+            background: rgba(0,0,0,0.3); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            color: white; border-radius: 12px; font-size: 14px; 
+            box-sizing: border-box; transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        input:focus { 
+            border-color: var(--accent-green); outline: none; 
+            background: rgba(0, 255, 133, 0.05);
+            box-shadow: 0 0 0 4px rgba(0, 255, 133, 0.1);
+        }
+        input::placeholder { color: rgba(255,255,255,0.3); }
+
+        /* Button Styling */
+        .btn-login { 
+            background: var(--accent-green); color: #000; border: none; 
+            padding: 16px; border-radius: 12px; cursor: pointer; 
+            font-size: 14px; font-weight: 700; margin-top: 25px; 
+            transition: all 0.3s; width: 100%; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 255, 133, 0.2);
+        }
+        .btn-login:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 8px 25px rgba(0, 255, 133, 0.4); 
+        }
+        .btn-login:active { transform: scale(0.98); }
+        
+        /* Footer Links */
+        .footer-links { 
+            display: flex; justify-content: space-between; margin-top: 30px; 
+            font-size: 13px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .footer-link { color: var(--text-dim); text-decoration: none; transition: 0.3s; }
+        .footer-link:hover { color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        
+        /* Checkbox Styling */
+        .remember-me { 
+            display: flex; align-items: center; justify-content: flex-start; 
+            gap: 10px; margin: 15px 0; font-size: 13px; color: var(--text-dim); 
+        }
+        input[type="checkbox"] { 
+            accent-color: var(--accent-green); width: 16px; height: 16px; 
+            margin: 0; cursor: pointer; 
+        }
+        label { cursor: pointer; transition: 0.2s; }
+        label:hover { color: white; }
+
+        /* ========================================= */
+        /* --- MOBILE & TABLET RESPONSIVENESS --- */
+        /* ========================================= */
+        @media screen and (max-width: 600px) {
+            body {
+                align-items: flex-start; /* Align top on mobile to avoid cut-off */
+                padding: 40px 0;
+                height: auto; /* Allow scrolling if content is tall */
+            }
+
+            .login-container {
+                width: 90%; /* Responsive width */
+                padding: 40px 30px; /* Adjust padding for better look on mobile */
+                margin: 0 auto;
+            }
+
+            h1 { font-size: 26px; }
+            .login-logo { width: 120px; }
+            
+            input[type="text"], input[type="password"] {
+                padding: 14px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .footer-links {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <img src="{% static 'images/logo.png' %}" alt="TradeSmart Logo" class="login-logo">
+    
+    <h1>TRADESMART</h1>
+    <div class="sub-text">"It only gets better when you get better"</div>
+    
+    {% if error %}
+        <div style="color: #FF4D4D; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; border: 1px solid rgba(255, 77, 77, 0.2);">
+            ⚠️ {{ error }}
+        </div>
+    {% endif %}
+
+    <h3>Welcome Back</h3>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="Username or Email" required autofocus>
+        <input type="password" name="password" placeholder="Password" required>
+        
+        <div class="remember-me">
+            <input type="checkbox" name="remember" id="remember"> 
+            <label for="remember">Remember me</label>
+        </div>
+
+        <button type="submit" class="btn-login">Login to Dashboard</button>
+    </form>
+
+    <div class="footer-links">
+        <a href="{% url 'password_reset' %}" class="footer-link">Forgot Password?</a>
+        <a href="{% url 'register' %}" class="footer-link" style="color:var(--accent-green); font-weight:600;">Create Account</a>
+    </div>
+</div>
+
+</body>
+</html>

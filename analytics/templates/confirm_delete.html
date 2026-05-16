@@ -1,0 +1,181 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TradeSmart | Confirm Disconnect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-bg: rgba(5, 5, 5, 0.95);
+            --main-bg: #080808;
+            --card-bg: rgba(20, 20, 20, 0.6);
+            --text-main: #FFFFFF;
+            --text-dim: #888888;
+            --accent-green: #00FF85;
+            --accent-red: #FF4D4D;
+            --border: rgba(255, 255, 255, 0.08);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+            --neon-red-glow: 0 0 20px rgba(255, 77, 77, 0.2);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--main-bg); 
+            background-image: radial-gradient(circle at 50% 50%, rgba(255, 77, 77, 0.05) 0%, transparent 60%);
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            opacity: 0; 
+            animation: pageFadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            overflow-x: hidden;
+        }
+        
+        @keyframes pageFadeIn { to { opacity: 1; } }
+        @keyframes popIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pulseWarning {
+            0% { border-color: rgba(255, 204, 0, 0.2); }
+            50% { border-color: rgba(255, 204, 0, 0.5); }
+            100% { border-color: rgba(255, 204, 0, 0.2); }
+        }
+
+        .container { 
+            background: var(--card-bg); 
+            width: 480px; 
+            padding: 50px; 
+            text-align: center; 
+            border-radius: 20px; 
+            border: var(--glass-border);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); 
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s forwards;
+            opacity: 0;
+            box-sizing: border-box; /* Include padding in width */
+        }
+        
+        .icon-danger {
+            font-size: 48px; margin-bottom: 20px; display: block;
+            filter: drop-shadow(0 0 15px rgba(255, 77, 77, 0.4));
+        }
+
+        h2 { 
+            margin-bottom: 15px; font-weight: 700; font-size: 26px; 
+            letter-spacing: -0.5px; color: #fff;
+        }
+        
+        p { color: var(--text-dim); font-size: 14px; line-height: 1.6; margin-bottom: 30px; }
+        
+        .account-box { 
+            background: rgba(0,0,0,0.3); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin-bottom: 25px; 
+            color: white; 
+            font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+
+        .warning-text { 
+            color: #FFD700; 
+            background: rgba(255, 215, 0, 0.05); 
+            border: 1px solid rgba(255, 215, 0, 0.2); 
+            padding: 15px; 
+            border-radius: 10px; 
+            font-size: 13px; 
+            margin-bottom: 35px; 
+            line-height: 1.5;
+            animation: pulseWarning 2s infinite;
+        }
+        
+        /* Buttons */
+        .btn-delete { 
+            background: rgba(255, 77, 77, 0.1); 
+            color: var(--accent-red); 
+            border: 1px solid rgba(255, 77, 77, 0.3); 
+            padding: 14px 30px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: all 0.3s; 
+            width: 100%; 
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .btn-delete:hover { 
+            background: var(--accent-red); color: white; 
+            box-shadow: var(--neon-red-glow); transform: translateY(-2px);
+        }
+        
+        .btn-cancel { 
+            background: transparent; 
+            color: var(--text-dim); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            padding: 14px 30px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            text-decoration: none; 
+            display: inline-block; 
+            font-size: 14px; 
+            transition: all 0.3s; 
+            width: 100%; 
+            box-sizing: border-box;
+            font-weight: 500;
+        }
+        .btn-cancel:hover { border-color: white; color: white; background: rgba(255,255,255,0.05); }
+
+        /* ========================================= */
+        /* --- MOBILE & TABLET RESPONSIVENESS --- */
+        /* ========================================= */
+        @media screen and (max-width: 600px) {
+            body {
+                align-items: center; 
+                padding: 20px 0;
+            }
+
+            .container {
+                width: 90%; /* Fluid width */
+                padding: 40px 25px; /* Adjust padding */
+                margin: 0 auto;
+            }
+
+            h2 { font-size: 22px; }
+            
+            .account-box { font-size: 14px; }
+            
+            .icon-danger { font-size: 40px; margin-bottom: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <span class="icon-danger">⚠️</span>
+    <h2>Disconnect Account?</h2>
+    <p>Are you sure you want to remove this trading account? This action will sever the connection and stop all data syncing.</p>
+
+    <div class="account-box">
+        <span>📂</span> 
+        {{ account.broker_name }} 
+        <span style="font-weight:400; color:#666; font-size: 13px;">(ID: {{ account.id }})</span>
+    </div>
+
+    <div class="warning-text">
+        <strong>Warning:</strong> Historical trade data associated with this account may be permanently inaccessible if not backed up.
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-delete">Yes, Disconnect</button>
+        <a href="{% url 'settings' %}" class="btn-cancel">Cancel</a>
+    </form>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
+tradesmart_env/
+
+# Django
+db.sqlite3
+.env

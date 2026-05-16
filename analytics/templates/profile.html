@@ -1,0 +1,250 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TradeSmart | User Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- MERGED VARIABLES --- */
+        :root {
+            /* Sidebar Variables are now in sidebar.html */
+            
+            /* Main Content Variables */
+            --main-bg: #080808;
+            --card-bg: rgba(20, 20, 20, 0.6);
+            --text-main: #FFFFFF;
+            --text-dim: #888888;
+            --neon-green-glow: 0 0 15px rgba(0, 255, 148, 0.2);
+            --accent-green: #00FF94; 
+            --accent-red: #FF4D4D; 
+            --glass-border: 1px solid rgba(255, 255, 255, 0.06);
+            --neon-red-glow: 0 0 15px rgba(255, 77, 77, 0.2);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--main-bg); 
+            background-image: radial-gradient(circle at 10% 80%, rgba(0, 255, 133, 0.03) 0%, transparent 30%);
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            opacity: 0; 
+            animation: pageFadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            /* Fix horizontal scroll on mobile */
+            overflow-x: hidden;
+            width: 100%;
+        }
+        
+        @keyframes pageFadeIn { to { opacity: 1; } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- MAIN CONTENT STYLES --- */
+        .main-content { margin-left: 280px; flex-grow: 1; padding: 50px; max-width: 1200px; box-sizing: border-box; }
+        
+        /* --- FIXED TITLE (DESKTOP) --- */
+        .page-title { 
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            background: rgba(8, 8, 8, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-top: 15px;
+            padding-bottom: 15px;
+            margin-bottom: 40px; 
+            margin-top: -20px; 
+            font-weight: 700; 
+            font-size: 28px; 
+            letter-spacing: -0.5px;
+            animation: fadeInUp 0.6s ease-out 0.1s forwards; 
+            opacity: 0;
+            width: 100%;
+        }
+        
+        .profile-container { 
+            display: grid; grid-template-columns: 320px 1fr; gap: 30px; 
+            animation: fadeInUp 0.6s ease-out 0.2s forwards; opacity: 0;
+        }
+        
+        /* Cards */
+        .card { 
+            background: var(--card-bg); 
+            padding: 40px; 
+            border-radius: 24px; 
+            border: var(--glass-border); 
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        /* Avatar Section */
+        .avatar-section { text-align: center; }
+        
+        .large-avatar { 
+            width: 120px; height: 120px; border-radius: 30px; 
+            background: linear-gradient(135deg, rgba(0, 255, 133, 0.1), rgba(0,0,0,0.5));
+            border: 1px solid rgba(0, 255, 133, 0.3); 
+            margin: 0 auto 20px auto; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 48px; font-weight: 700; color: var(--accent-green); 
+            box-shadow: 0 0 15px rgba(0, 255, 133, 0.3);
+        }
+        
+        h2 { margin: 0; font-weight: 700; font-size: 22px; color: white; letter-spacing: 0.5px; }
+        p.email { color: var(--text-dim); font-size: 13px; margin-top: 5px; font-weight: 500; }
+        
+        hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0; }
+        
+        .info-label { display: block; font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; font-weight: 600; }
+        .info-value { font-size: 16px; margin-bottom: 5px; display: block; font-weight: 500; }
+
+        /* Account List */
+        h4 { margin: 0 0 25px 0; font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; border-left: 3px solid var(--accent-green); padding-left: 10px; }
+
+        .account-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 20px; background: rgba(255,255,255,0.03); 
+            border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); 
+            margin-bottom: 15px; transition: all 0.3s ease;
+        }
+        .account-item:hover { 
+            transform: translateY(-3px); 
+            background: rgba(255,255,255,0.05); 
+            border-color: rgba(255,255,255,0.1); 
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+        }
+        
+        .broker-name { font-weight: 600; color: white; font-size: 15px; }
+        .account-id { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+        .add-link { color: var(--accent-green); text-decoration: none; font-weight: 600; }
+        .add-link:hover { text-decoration: underline; }
+
+        /* ========================================= */
+        /* --- MOBILE & TABLET RESPONSIVENESS --- */
+        /* ========================================= */
+        @media screen and (max-width: 900px) {
+            body {
+                flex-direction: column;
+                overflow-x: hidden;
+            }
+
+            .main-content { 
+                margin-left: 0; 
+                width: 100%; 
+                /* Padding to push content below the stationary header */
+                padding: 130px 20px 20px 20px; 
+                box-sizing: border-box; 
+            }
+
+            .profile-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .avatar-section {
+                margin-bottom: 0;
+            }
+
+            /* --- STATIONARY HEADER (MOBILE) --- */
+            .page-title {
+                position: fixed;
+                top: 60px; /* Sits below the sidebar mobile top-bar */
+                left: 0;
+                width: 100%;
+                z-index: 90;
+                background: rgba(8, 8, 8, 0.98);
+                backdrop-filter: blur(15px);
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                
+                /* ALIGN LEFT */
+                text-align: left;
+                padding: 15px 20px;
+                margin: 0;
+                font-size: 22px;
+                box-sizing: border-box;
+                opacity: 1;
+                animation: none; /* Prevents opacity flicker on mobile */
+            }
+
+            /* Adjust card padding for smaller screens */
+            .card {
+                padding: 25px 20px;
+            }
+
+            .large-avatar {
+                width: 100px;
+                height: 100px;
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+
+    <div class="main-content">
+        <h3 class="page-title">Profile</h3>
+        
+        <div class="profile-container">
+            <div class="card avatar-section">
+                <div class="large-avatar">
+                    {{ user.username|slice:":1"|upper }}
+                </div>
+                <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+                <p class="email">@{{ user.username }}</p>
+                
+                <hr>
+                
+                <div style="text-align: left; padding: 0 20px;">
+                    <span class="info-label">Email Address</span>
+                    <span class="info-value">{{ user.email }}</span>
+                    
+                    <div style="margin-top: 15px;">
+                        <span class="info-label">Risk Profile</span>
+                        <span class="info-value" style="color: var(--accent-green);">
+                            {{ profile.risk_appetite|title|default:"Moderate" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h4>Connected Trading Accounts</h4>
+                
+                {% for acc in accounts %}
+                <div class="account-item">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="width:40px; height:40px; background:rgba(255,255,255,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px;">
+                            {% if acc.snaptrade_user_id %}⚡{% else %}📂{% endif %}
+                        </div>
+                        <div>
+                            <span class="broker-name">{{ acc.broker_name }}</span>
+                            <div class="account-id"> {% if acc.snaptrade_user_id %}API Connected{% else %}Manual Import{% endif %}</div>
+                        </div>
+                    </div>
+                    </div>
+                {% empty %}
+                <div style="text-align: center; padding: 60px; color: var(--text-dim);">
+                    <div style="font-size: 40px; margin-bottom: 15px; opacity: 0.3;">🔗</div>
+                    No trading accounts linked yet.
+                    <br><br>
+                    <a href="{% url 'add_account' %}" class="add-link">+ Connect Account</a>
+                </div>
+                {% endfor %}
+                
+                {% if accounts %}
+                    <div style="text-align:center; margin-top:20px;">
+                        <a href="{% url 'add_account' %}" class="add-link" style="font-size:13px;">+ Add Another Account</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

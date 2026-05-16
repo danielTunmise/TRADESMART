@@ -1,0 +1,258 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TradeSmart | Add Account</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        /* --- VARIABLES --- */
+        --bg-dark: #050505;
+        --card-glass: rgba(20, 20, 20, 0.6);
+        --card-border: rgba(255, 255, 255, 0.08);
+        
+        --text-main: #FFFFFF; 
+        --text-dim: #888888; 
+        --accent-green: #00FF94; 
+        --accent-red: #FF4D4D; 
+        
+        --accent-primary: #00ffa3;
+        --accent-blue: #00d2ff;
+        
+        --glass-border: 1px solid rgba(255, 255, 255, 0.06);
+        --glow-input: 0 0 0 2px rgba(0, 255, 163, 0.2);
+        --neon-green-glow: 0 0 20px rgba(0, 255, 163, 0.3);
+        --neon-red-glow: 0 0 15px rgba(255, 77, 77, 0.2);
+    }
+
+    body { 
+        font-family: 'Outfit', sans-serif; 
+        background-color: var(--bg-dark); 
+        color: var(--text-main); 
+        margin: 0; 
+        display: flex; 
+        min-height: 100vh;
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    /* --- BACKGROUND --- */
+    .ambient-bg {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        background: 
+            radial-gradient(circle at 15% 50%, rgba(0, 255, 163, 0.05) 0%, transparent 25%),
+            radial-gradient(circle at 85% 30%, rgba(0, 210, 255, 0.05) 0%, transparent 25%);
+        animation: breathe 10s ease-in-out infinite alternate;
+    }
+    @keyframes breathe {
+        0% { transform: scale(1); opacity: 0.8; }
+        100% { transform: scale(1.1); opacity: 1; }
+    }
+
+    /* --- MAIN CONTENT --- */
+    .main-content { 
+        margin-left: 280px; 
+        flex-grow: 1; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center;
+        padding: 120px 40px 40px 40px; /* Top padding to clear fixed header */
+        min-height: 100vh;
+        position: relative;
+        box-sizing: border-box;
+    }
+
+    /* --- STATIONARY HEADER (DESKTOP) --- */
+    .page-title {
+        position: fixed;
+        top: 0;
+        left: 280px; /* Offset by sidebar width */
+        right: 0;
+        z-index: 900;
+        background: rgba(5, 5, 5, 0.95);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        margin: 0;
+        padding: 30px 50px;
+        font-size: 32px; 
+        font-weight: 800; 
+        letter-spacing: -1px;
+        text-align: left; /* Pinned left */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        background-image: linear-gradient(to right, #fff, #aaa);
+        -webkit-background-clip: text; 
+        -webkit-text-fill-color: transparent;
+        animation: fadeUp 0.8s ease-out forwards;
+        box-sizing: border-box;
+    }
+
+    .choice-container { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+        gap: 40px; 
+        width: 100%; 
+        max-width: 900px;
+    }
+    
+    .choice-card { 
+        background: var(--card-glass);
+        border: 1px solid var(--card-border);
+        padding: 40px 30px; 
+        border-radius: 24px; 
+        text-align: center; 
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        position: relative; 
+        display: flex; flex-direction: column;
+        backdrop-filter: blur(40px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        opacity: 0; animation: fadeUp 0.8s ease-out forwards;
+    }
+    
+    .choice-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    }
+
+    .choice-card:hover { 
+        transform: translateY(-10px) scale(1.02); 
+        background: rgba(30, 30, 30, 0.7);
+        border-color: rgba(255,255,255,0.2);
+    }
+
+    .choice-icon { font-size: 48px; margin-bottom: 25px; animation: float 3s ease-in-out infinite; }
+    .choice-title { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 15px; color: white; }
+    .choice-desc { color: var(--text-dim); font-size: 14px; line-height: 1.6; margin-bottom: 30px; flex-grow: 1; text-align: left; }
+    
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+    
+    .account-input { 
+        width: 100%; padding: 16px 20px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px; color: #fff; font-family: 'Outfit'; font-size: 15px; margin-bottom: 20px; outline: none; box-sizing: border-box; transition: all 0.3s;
+    }
+    .account-input:focus { border-color: var(--accent-primary); box-shadow: var(--glow-input); background: rgba(0,0,0,0.6); transform: translateY(-2px); }
+
+    .btn { padding: 16px 20px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; width: 100%; font-size: 14px; text-transform: uppercase; transition: 0.3s; }
+    .btn-primary { background: var(--accent-primary); color: #000; box-shadow: 0 4px 15px rgba(0, 255, 163, 0.2); }
+    .btn-secondary { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+    /* ========================================= */
+    /* --- MOBILE & TABLET RESPONSIVENESS --- */
+    /* ========================================= */
+    @media screen and (max-width: 900px) {
+        body { flex-direction: column; overflow-x: hidden; }
+
+        /* Ensure Sidebar has highest priority */
+        .sidebar { z-index: 2000 !important; }
+
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+            padding: 140px 20px 20px 20px !important; 
+            box-sizing: border-box;
+            justify-content: flex-start !important;
+        }
+
+        /* --- STATIONARY HEADER (MOBILE) --- */
+        .page-title {
+            position: fixed !important;
+            top: 60px !important; /* Below the hamburger navbar */
+            left: 0 !important;
+            width: 100% !important;
+            padding: 15px 20px !important;
+            font-size: 22px !important;
+            z-index: 900 !important; 
+            text-align: left !important;
+            background: #080808 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            display: block !important;
+            visibility: visible !important;
+            /* Resetting clipping for mobile visibility */
+            -webkit-background-clip: initial !important;
+            -webkit-text-fill-color: initial !important;
+            color: #FFFFFF !important;
+        }
+
+        .choice-container { grid-template-columns: 1fr; gap: 30px; }
+        .choice-card { padding: 30px 20px; }
+    }
+</style>
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+
+    <div class="ambient-bg"></div>
+
+    <div class="main-content">
+        
+        <h3 class="page-title">CONNECT BROKER</h3>
+
+        <div class="choice-container">
+            
+            <div class="choice-card">
+                <span class="choice-icon" style="color: #FFD700;">⚡</span>
+                <div class="choice-title">Connect Gateway</div>
+                <div class="choice-desc">
+                    Redirect to secure partner login. Best for supported brokers with OAuth.
+                    <br><br>
+                    <ul>
+                        <li style="color:white;"><span style="color:var(--accent-primary);">✔</span> Official API Link</li>
+                        <li style="color:white;"><span style="color:var(--accent-primary);">✔</span> Real-time Sync</li>
+                    </ul>
+                </div>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_type" value="api">
+                    <input type="text" name="nickname" class="account-input" placeholder="Name (e.g. My Oanda)" required>
+                    <button type="submit" class="btn btn-primary">Connect via Gateway</button>
+                </form>
+            </div>
+
+            <div class="choice-card">
+                <span class="choice-icon" style="color: #00d2ff;">📂</span>
+                <div class="choice-title">Manual Import</div>
+                <div class="choice-desc">
+                    Upload HTML or CSV files manually. Good for offline analysis.
+                    <br><br>
+                    <ul>
+                        <li style="color:var(--text-dim);"><span>🔒</span> No Live Data</li>
+                        <li style="color:white;"><span style="color:var(--accent-primary);">✔</span> Unlimited Uploads</li>
+                    </ul>
+                </div>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_type" value="manual">
+                    <input type="text" name="nickname" class="account-input" placeholder="Name (e.g. Old History)" required>
+                    <button type="submit" class="btn btn-secondary">Create Manual</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:200; align-items:center; justify-content:center; flex-direction:column; backdrop-filter:blur(10px);">
+        <div style="font-size:50px; animation:spin 1s linear infinite;"> ⚡ </div>
+        <h3 style="color:white; margin-top:20px; font-family:'Outfit';">Connecting...</h3>
+        <p style="color:#888; font-family:'Inter';">Establishing secure gateway link.</p>
+    </div>
+
+    <script>
+        // Show loading screen on form submit
+        document.querySelectorAll('form').forEach(form => {
+            if(!form.classList.contains('logout-form')) {
+                form.addEventListener('submit', function() {
+                    document.getElementById('loadingOverlay').style.display = 'flex';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TradeSmart | Import Data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- MERGED VARIABLES --- */
+        :root {
+            /* Sidebar Variables are now in sidebar.html */
+            
+            /* Main Content Variables */
+            --main-bg: #080808;
+            --card-bg: rgba(20, 20, 20, 0.6);
+            --text-main: #FFFFFF;
+            --text-dim: #888888;
+            --accent-green: #00FF94; 
+            --accent-red: #FF4D4D;
+            --glass-border: 1px solid rgba(255, 255, 255, 0.06);
+            --neon-green-glow: 0 0 10px rgba(0, 255, 133, 0.3);
+            --neon-red-glow: 0 0 15px rgba(255, 77, 77, 0.2);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--main-bg); 
+            background-image: radial-gradient(circle at 50% 10%, rgba(0, 255, 133, 0.03) 0%, transparent 40%);
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            opacity: 0; 
+            animation: pageFadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            /* Fix horizontal scroll on mobile */
+            overflow-x: hidden;
+            width: 100%;
+        }
+        
+        @keyframes pageFadeIn { to { opacity: 1; } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* --- MAIN CONTENT STYLES --- */
+        .main-content { 
+            margin-left: 280px; flex-grow: 1; padding: 50px; 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .upload-card { 
+            background: var(--card-bg); 
+            padding: 50px; 
+            border-radius: 20px; 
+            border: var(--glass-border); 
+            width: 100%; max-width: 600px; 
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s forwards;
+        }
+        
+        h2 { margin-top: 0; font-weight: 700; font-size: 24px; color: #fff; letter-spacing: -0.5px; margin-bottom: 10px; }
+        
+        .form-group { margin-bottom: 30px; }
+        
+        label { 
+            display: block; color: var(--text-dim); font-size: 11px; 
+            margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+        }
+        
+        /* Styled Drop Zone */
+        .file-drop-zone { 
+            border: 2px dashed rgba(255,255,255,0.1); 
+            padding: 50px 20px; 
+            text-align: center; 
+            border-radius: 12px; 
+            background: rgba(255,255,255,0.01); 
+            transition: all 0.3s ease; 
+            cursor: pointer;
+            position: relative;
+        }
+        .file-drop-zone:hover, .file-drop-zone.dragover { 
+            border-color: var(--accent-green); 
+            background: rgba(0, 255, 133, 0.05);
+            transform: scale(1.01);
+        }
+        
+        .drop-icon { font-size: 32px; margin-bottom: 15px; display: block; opacity: 0.5; transition: 0.3s; }
+        .file-drop-zone:hover .drop-icon { opacity: 1; transform: translateY(-5px); }
+
+        /* Customizing File Input */
+        input[type="file"] { 
+            display: none; /* Hide default input */
+        }
+        
+        /* Select Styling */
+        select { 
+            width: 100%; background: rgba(0,0,0,0.3); 
+            border: 1px solid rgba(255,255,255,0.1); color: white; 
+            padding: 14px; border-radius: 10px; outline: none; 
+            transition: all 0.3s; font-size: 14px; cursor: pointer;
+            box-sizing: border-box;
+        }
+        select:focus { border-color: var(--accent-green); box-shadow: 0 0 0 4px rgba(0, 255, 133, 0.1); }
+
+        .btn-save { 
+            background: var(--accent-green); color: #000; 
+            padding: 16px; border-radius: 10px; border: none; 
+            font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; 
+            text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;
+            transition: all 0.3s; box-shadow: 0 4px 15px rgba(0, 255, 133, 0.2);
+        }
+        .btn-save:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 25px rgba(0, 255, 133, 0.4); 
+        }
+        .btn-save:active { transform: scale(0.98); }
+
+        /* Alerts - Glass Toasts */
+        .messages-container { position: fixed; top: 30px; right: 30px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+        .alert {
+            padding: 16px 24px; border-radius: 12px; color: white; min-width: 320px;
+            backdrop-filter: blur(20px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.1); font-size: 14px; font-weight: 500;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .alert-success { background: rgba(0, 255, 148, 0.15); border-left: 4px solid var(--accent-green); }
+        .alert-error { background: rgba(255, 77, 77, 0.15); border-left: 4px solid var(--accent-red); }
+        .alert-warning { background: rgba(255, 215, 0, 0.15); border-left: 4px solid #FFD700; }
+
+        .close-alert { cursor: pointer; opacity: 0.6; font-size: 18px; transition: 0.2s; }
+        .close-alert:hover { opacity: 1; transform: scale(1.1); }
+
+        /* ========================================= */
+        /* --- MOBILE & TABLET RESPONSIVENESS --- */
+        /* ========================================= */
+        @media screen and (max-width: 900px) {
+            /* 1. Reset Layout for Vertical Stacking */
+            body {
+                flex-direction: column;
+                overflow-x: hidden;
+            }
+
+            /* 4. Fix Main Content Margins & Alignment */
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px; /* Reduced padding */
+                box-sizing: border-box;
+                height: auto; /* Allow auto height for mobile scrolling */
+                align-items: flex-start; /* Align top instead of center */
+            }
+
+            /* 5. Adjust Upload Card */
+            .upload-card {
+                padding: 30px 20px;
+                margin-top: 80px; /* Space for the fixed top bar */
+            }
+            
+           /* --- POPUP POSITIONING (MOBILE) --- */
+        .messages-container {
+            top: 195px; /* Sit below the 185px header zone */
+            right: 10px; 
+            left: 10px; 
+            width: auto;
+            z-index: 2000;
+        }
+        .alert { min-width: unset; width: 100%; box-sizing: border-box; }
+        }
+    </style>
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% else %}alert-warning{% endif %}">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 18px;">
+                        {% if message.tags == 'success' %}✨{% elif message.tags == 'error' %}⚠️{% else %}ℹ️{% endif %}
+                    </span>
+                    {{ message }}
+                </div>
+                <span class="close-alert" onclick="this.parentElement.style.opacity='0'; setTimeout(()=>this.parentElement.remove(), 300);">×</span>
+            </div>
+        {% endfor %}
+        <script>
+            setTimeout(() => {
+                document.querySelectorAll('.alert').forEach(el => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateX(100%)';
+                    el.style.transition = 'all 0.5s ease';
+                    setTimeout(() => el.remove(), 500);
+                });
+            }, 5000);
+        </script>
+    </div>
+    {% endif %}
+
+    <div class="main-content">
+        <div class="upload-card">
+            <h2>Import Trade History</h2>
+            <p style="color:var(--text-dim); font-size:14px; margin-bottom:35px; line-height: 1.6;">
+                Upload a CSV or Excel export from your broker (e.g. Deriv, FBS, MT4/MT5) to automatically populate your Journal and Dashboard analytics.
+            </p>
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label>Broker Platform Format</label>
+                    {{ form.broker_format }}
+                </div>
+
+                <div class="form-group">
+                    <label>File Upload</label>
+                    <label for="id_file" class="file-drop-zone" id="dropZone">
+                        <span class="drop-icon">📂</span>
+                        <div style="font-weight:600; color:#fff; margin-bottom:5px;">Click to Upload or Drag File Here</div>
+                        <div style="font-size:12px; color:#666;">Supports .CSV and .XLSX files</div>
+                        {{ form.file }}
+                    </label>
+                    <div id="fileName" style="margin-top:10px; font-size:13px; color:var(--accent-green); text-align:center; height:20px;"></div>
+                </div>
+
+                <button type="submit" class="btn-save">Upload & Sync Data</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Simple Drag & Drop Visuals
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('id_file'); // Assuming Django renders ID as id_file
+        const fileNameDisplay = document.getElementById('fileName');
+
+        // Highlight on drag
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        // Handle File Drop
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            updateFileName();
+        });
+
+        // Handle Click Select
+        fileInput.addEventListener('change', updateFileName);
+
+        function updateFileName() {
+            if(fileInput.files.length > 0) {
+                fileNameDisplay.textContent = "Selected: " + fileInput.files[0].name;
+                fileNameDisplay.style.opacity = '1';
+            } else {
+                fileNameDisplay.textContent = "";
+            }
+        }
+    </script>
+</body>
+</html>

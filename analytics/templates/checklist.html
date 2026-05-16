@@ -1,0 +1,600 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TradeSmart | Strategy Checklist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        /* Sidebar Variables are now in sidebar.html */
+        
+        /* Main Content Variables */
+        --bg-dark: #050505;
+        --card-glass: rgba(20, 20, 20, 0.6);
+        --card-border: rgba(255, 255, 255, 0.08);
+        
+        --text-main: #FFFFFF; 
+        --text-dim: #888888; 
+        
+        --accent-primary: #00ffa3;
+        --checkbox-checked: #00ffa3;
+        --accent-red: #FF4D4D; 
+        --glass-border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    body { 
+        font-family: 'Outfit', sans-serif; 
+        background-color: var(--bg-dark); 
+        color: var(--text-main); 
+        margin: 0; 
+        display: flex; 
+        min-height: 100vh;
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    /* --- DYNAMIC BACKGROUND --- */
+    .ambient-bg {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        background: 
+            radial-gradient(circle at 80% 20%, rgba(0, 255, 163, 0.04) 0%, transparent 30%),
+            radial-gradient(circle at 20% 80%, rgba(0, 210, 255, 0.04) 0%, transparent 30%);
+        animation: breathe 10s ease-in-out infinite alternate;
+    }
+    @keyframes breathe {
+        0% { opacity: 0.6; }
+        100% { opacity: 1; }
+    }
+
+    /* --- MAIN CONTENT --- */
+    .main-content { 
+        margin-left: 280px; 
+        flex-grow: 1; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        padding: 130px 40px 60px 40px; /* Top padding to clear fixed header */
+        min-height: 100vh; 
+        position: relative; 
+        box-sizing: border-box;
+    }
+
+    /* --- STATIONARY HEADER (DESKTOP) --- */
+    .strategy-header {
+        position: fixed;
+        top: 0;
+        left: 280px; /* Offset by sidebar width */
+        right: 0;
+        z-index: 90;
+        background: rgba(5, 5, 5, 0.95);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        padding: 25px 40px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        -webkit-background-clip: text; 
+        animation: fadeUp 0.8s ease-out forwards;
+        box-sizing: border-box;
+    }
+    
+    .header-left h1 { font-size: 32px; font-weight: 800; margin: 0; background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header-left p { color: var(--text-dim); margin: 5px 0 0 0; font-size: 14px; font-family: 'Inter'; }
+
+    /* Strategy Controls Group */
+    .strategy-controls { display: flex; align-items: center; gap: 10px; }
+
+    .strategy-select-wrapper { position: relative; }
+    .strategy-select {
+        background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1);
+        padding: 10px 35px 10px 15px; border-radius: 12px; font-family: 'Outfit'; font-weight: 700; font-size: 14px;
+        appearance: none; cursor: pointer; transition: 0.3s;
+    }
+    .strategy-select:hover { background: rgba(255,255,255,0.1); border-color: var(--accent-primary); }
+    .select-arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 10px; color: var(--accent-primary); }
+
+    .btn-settings {
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim);
+        width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; 
+        align-items: center; justify-content: center; font-size: 18px; transition: 0.3s;
+    }
+    .btn-settings:hover { background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2); }
+
+    /* --- CHECKLIST CONTAINER --- */
+    .checklist-card {
+        width: 100%; max-width: 800px; background: var(--card-glass); border: 1px solid var(--card-border);
+        border-radius: 24px; padding: 40px; backdrop-filter: blur(40px); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        opacity: 0; animation: fadeUp 0.8s ease-out 0.2s forwards; overflow: hidden; margin-bottom: 50px;
+        position: relative; z-index: 1; 
+    }
+    .checklist-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(0,255,163,0.5), transparent); }
+
+    /* --- INPUT AREA --- */
+    .input-area { display: flex; gap: 15px; margin-bottom: 30px; }
+    .rule-input {
+        flex-grow: 1; padding: 16px 20px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px; color: #fff; font-family: 'Inter'; font-size: 15px; outline: none; transition: all 0.3s;
+    }
+    .rule-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 2px rgba(0, 255, 163, 0.2); background: rgba(0,0,0,0.6); }
+    .btn-add {
+        background: var(--accent-primary); color: #000; padding: 0 30px; border-radius: 12px; border: none;
+        font-weight: 700; cursor: pointer; font-size: 14px; font-family: 'Outfit'; text-transform: uppercase;
+        transition: all 0.3s; box-shadow: 0 4px 15px rgba(0, 255, 163, 0.2);
+    }
+    .btn-add:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 163, 0.4); }
+
+    /* --- RULES LIST --- */
+    .rules-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+    .rule-item {
+        display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; transition: all 0.3s ease; cursor: pointer; position: relative;
+    }
+    .rule-item:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); transform: translateX(5px); }
+    
+    .custom-checkbox {
+        width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.3); border-radius: 6px;
+        display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;
+    }
+    .rule-item.checked .custom-checkbox { background: var(--accent-primary); border-color: var(--accent-primary); box-shadow: 0 0 10px rgba(0, 255, 163, 0.4); }
+    .custom-checkbox::after { content: '✔'; color: black; font-weight: 800; font-size: 14px; display: none; }
+    .rule-item.checked .custom-checkbox::after { display: block; }
+
+    .rule-text { font-family: 'Inter'; font-size: 15px; color: #ddd; flex-grow: 1; transition: all 0.3s; word-break: break-word; }
+    .rule-item.checked .rule-text { text-decoration: line-through; color: var(--text-dim); }
+
+    .rule-actions { display: flex; align-items: center; gap: 5px; margin-left: auto; opacity: 0; transition: opacity 0.2s; }
+    .rule-item:hover .rule-actions { opacity: 1; }
+    
+    .btn-icon { background: transparent; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; padding: 5px; transition: all 0.2s; }
+    .btn-icon:hover { color: white; transform: scale(1.1); }
+    .btn-delete:hover { color: var(--accent-red); text-shadow: 0 0 10px rgba(255,77,77,0.5); }
+
+    /* --- FOOTER ACTIONS --- */
+    .action-bar { margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center; }
+    .btn-reset {
+        background: rgba(255, 255, 255, 0.05); color: #fff; padding: 12px 24px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);
+        font-weight: 600; cursor: pointer; font-size: 13px; font-family: 'Inter'; transition: all 0.3s; display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    .btn-reset:hover { background: rgba(255, 255, 255, 0.1); border-color: #fff; }
+
+    .progress-container { flex-grow: 1; margin-left: 30px; margin-right: 30px; background: rgba(255, 255, 255, 0.05); height: 6px; border-radius: 3px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: var(--accent-primary); box-shadow: 0 0 10px var(--accent-primary); transition: width 0.4s ease; }
+    .empty-state { text-align: center; padding: 40px; color: var(--text-dim); font-size: 14px; font-style: italic; border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; }
+
+    /* Dropdown Menu for Settings */
+    .dropdown-menu {
+        position: absolute; top: 100%; right: 0; background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px; width: 160px; display: none; flex-direction: column; z-index: 100;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; margin-top: 10px;
+    }
+    .dropdown-menu.show { display: flex; animation: fadeUp 0.2s ease-out; }
+    .dropdown-item {
+        padding: 12px 15px; color: #ccc; cursor: pointer; font-size: 13px; transition: 0.2s;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .dropdown-item:hover { background: rgba(255,255,255,0.05); color: white; }
+    .dropdown-item.danger { color: var(--accent-red); }
+    .dropdown-item.danger:hover { background: rgba(255, 77, 77, 0.1); }
+
+    /* Shake Animation for Sequential Error */
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); border-color: var(--accent-red); }
+        75% { transform: translateX(5px); border-color: var(--accent-red); }
+    }
+    .shake { animation: shake 0.4s ease-in-out; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes breathe { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+
+    /* ========================================= */
+    /* --- MOBILE & TABLET RESPONSIVENESS --- */
+    /* ========================================= */
+    @media screen and (max-width: 900px) {
+        body { flex-direction: column; overflow-x: hidden; }
+        
+        /* CONTENT ADJUSTMENT FOR STATIONARY TOP BARS */
+        .main-content { 
+            margin-left: 0; 
+            width: 100%; 
+            /* Adjusted padding to clear compact header */
+            padding: 200px 20px 20px 20px; 
+            box-sizing: border-box; 
+            display: block;
+        }
+        
+        /* --- STICKY HEADER CONTAINER (MOBILE) --- */
+        .strategy-header {
+            position: fixed;
+            top: 60px; /* Sits exactly below the sidebar top bar */
+            left: 0;
+            width: 100%;
+            padding: 15px 20px;
+            
+            /* Layout: Stack Title section and Controls section */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            
+            background: rgba(5, 5, 5, 0.98);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 900;
+            box-sizing: border-box;
+        }
+
+        .header-left {
+            width: 100%;
+        }
+
+        .header-left h1 { 
+            font-size: 20px; 
+            text-align: left; 
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+        
+        /* Show subtitle on mobile */
+        .header-left p { 
+            display: block !important; 
+            font-size: 11px;
+            opacity: 0.6;
+            line-height: 1.2;
+            margin: 0;
+        }
+        
+        /* Controls Row - Side by Side */
+        .strategy-controls { 
+            width: 100%; 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: space-between; 
+        }
+        
+        .strategy-select-wrapper { 
+            flex-grow: 1; 
+        }
+        
+        .strategy-select { 
+            width: 100%; 
+            font-size: 12px; 
+            padding: 10px 30px 10px 12px; /* Compact padding */
+            height: 40px;
+        }
+        
+        /* Settings Button */
+        .btn-settings {
+            width: 40px; 
+            height: 40px;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+        
+        /* Card UI Adjustments */
+        .checklist-card { 
+            padding: 20px 15px; 
+            margin-top: 0; 
+            border-radius: 16px;
+        }
+        
+        .input-area { 
+            flex-direction: column; 
+            gap: 10px; 
+            margin-bottom: 20px;
+        }
+        
+        .rule-input { 
+            order: 1; 
+            font-size: 13px;
+            padding: 12px 15px;
+        }
+        
+        .btn-add { 
+            padding: 12px; 
+            width: 100%; 
+            order: 2; 
+            font-size: 12px;
+        }
+        
+        .rule-item { 
+            padding: 12px 15px; 
+            border-radius: 10px;
+        }
+        
+        .rule-text { font-size: 13px; }
+        
+        .rule-actions { opacity: 1; } 
+        
+        /* Progress & Action Bar */
+        .action-bar { 
+            flex-direction: column; 
+            gap: 15px; 
+            text-align: center; 
+            margin-top: 20px;
+            padding-top: 15px;
+        }
+        
+        .progress-container { width: 100%; margin: 0; }
+        
+        #progressText { font-size: 10px; margin-top: 5px; }
+        
+        .btn-reset { 
+            width: 100%; 
+            justify-content: center; 
+            order: 2; 
+            padding: 12px;
+        }
+    }
+</style>
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+
+    <div class="ambient-bg"></div>
+
+    <div class="main-content">
+        <div class="strategy-header">
+            <div class="header-left">
+                <h1>STRATEGY CHECKLIST</h1>
+                <p>Pre-flight check to eliminate impulse trades.</p>
+            </div>
+            
+            <div class="strategy-controls">
+                <div class="strategy-select-wrapper">
+                    <select class="strategy-select" id="strategySelector" onchange="switchStrategy(this.value)">
+                        {% for strat in strategies %}
+                            <option value="{{ strat.id }}" {% if strat.id == active_strategy.id %}selected{% endif %}>{{ strat.name }}</option>
+                        {% endfor %}
+                        <option value="new_strat">+ New Strategy</option>
+                    </select>
+                    <div class="select-arrow">▼</div>
+                </div>
+                
+                <div style="position: relative;">
+                    <button class="btn-settings" onclick="toggleMenu()">⚙️</button>
+                    <div class="dropdown-menu" id="stratMenu">
+                        <div class="dropdown-item" onclick="renameStrategy()">✎ Rename</div>
+                        <div class="dropdown-item danger" onclick="deleteStrategy()">🗑 Delete</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="checklist-card">
+            <div class="input-area">
+                <input type="text" id="newRuleInput" class="rule-input" placeholder="e.g. Is RSI above 50 on the 1H timeframe?">
+                <button onclick="addRule()" class="btn-add">ADD RULE</button>
+            </div>
+
+            <ul id="rulesList" class="rules-list">
+                </ul>
+
+            <div class="action-bar">
+                <button class="btn-reset" onclick="resetChecklist()">
+                    <span>↺</span> Reset Checklist
+                </button>
+                <div class="progress-container">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+                <div style="font-size: 12px; font-weight: 700; color: var(--accent-primary);" id="progressText">0% READY</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // --- APP DATA ---
+    const activeStrategyId = "{{ active_strategy.id }}";
+    const activeStrategyName = "{{ active_strategy.name|escapejs }}";
+
+    // --- STRATEGY MANAGEMENT ---
+    function switchStrategy(val) {
+        if(val === 'new_strat') {
+            const name = prompt("Enter new strategy name (e.g. Scalping, Swing):");
+            if(name) {
+                fetch('/api/strategy/add/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                    body: JSON.stringify({name: name})
+                }).then(r => r.json()).then(d => {
+                    if(d.status === 'success') window.location.href = `?strategy_id=${d.id}`;
+                });
+            } else {
+                document.getElementById('strategySelector').value = activeStrategyId; 
+            }
+        } else {
+            window.location.href = `?strategy_id=${val}`;
+        }
+    }
+
+    function toggleMenu() {
+        document.getElementById('stratMenu').classList.toggle('show');
+    }
+
+    // Close menu when clicking outside
+    window.onclick = function(event) {
+        if (!event.target.matches('.btn-settings')) {
+            document.getElementById('stratMenu').classList.remove('show');
+        }
+    }
+
+    function renameStrategy() {
+        const newName = prompt("Rename Strategy:", activeStrategyName);
+        if(newName && newName !== activeStrategyName) {
+            fetch(`/api/strategy/rename/${activeStrategyId}/`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({name: newName})
+            }).then(r => r.json()).then(d => {
+                if(d.status === 'success') location.reload();
+            });
+        }
+    }
+
+    function deleteStrategy() {
+        if(confirm(`Are you sure you want to delete "${activeStrategyName}"? This cannot be undone.`)) {
+            fetch(`/api/strategy/delete/${activeStrategyId}/`, {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'}
+            }).then(r => r.json()).then(d => {
+                if(d.status === 'success') {
+                    window.location.href = "{% url 'checklist' %}"; // Reload to default
+                } else {
+                    alert(d.message || "Could not delete.");
+                }
+            });
+        }
+    }
+
+    // --- RULE LOGIC (Existing) ---
+    function addRule() {
+        const input = document.getElementById('newRuleInput');
+        const text = input.value.trim();
+        const btn = document.querySelector('.btn-add');
+        
+        if(!text) return;
+
+        btn.innerHTML = "..."; btn.disabled = true;
+
+        fetch('{% url "add_rule" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ 'text': text, 'strategy_id': activeStrategyId })
+        })
+        .then(r => r.json()).then(data => {
+            if(data.status === 'success') {
+                document.querySelector('.empty-state')?.remove();
+                document.getElementById('rulesList').appendChild(createRuleElement(data.id, data.text));
+                input.value = ''; updateProgress();
+            }
+        })
+        .finally(() => { btn.innerHTML = "ADD RULE"; btn.disabled = false; });
+    }
+
+    function editRule(id, oldText, event) {
+        event.stopPropagation();
+        const newText = prompt("Edit Rule:", oldText);
+        if(newText && newText !== oldText) {
+            const span = event.target.closest('li').querySelector('.rule-text');
+            span.innerText = newText;
+            fetch(`/api/checklist/edit/${id}/`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({ 'text': newText })
+            });
+        }
+    }
+
+    function deleteRule(id, event) {
+        event.stopPropagation();
+        if(!confirm("Remove this rule?")) return;
+        const item = event.target.closest('li');
+        item.style.opacity = '0';
+        setTimeout(() => item.remove(), 300);
+        fetch(`/api/checklist/delete/${id}/`, {
+            method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        }).then(() => updateProgress());
+    }
+
+    function createRuleElement(id, text) {
+        const li = document.createElement('li');
+        li.className = 'rule-item';
+        li.setAttribute('onclick', 'toggleCheck(this)');
+        const escaped = text.replace(/'/g, "\\'");
+        li.innerHTML = `
+            <div class="custom-checkbox"></div>
+            <span class="rule-text">${text}</span>
+            <div class="rule-actions">
+                <button class="btn-icon btn-edit" onclick="editRule(${id}, '${escaped}', event)">✎</button>
+                <button class="btn-icon btn-delete" onclick="deleteRule(${id}, event)">×</button>
+            </div>
+        `;
+        return li;
+    }
+
+    // UPDATED: Sequential Checking Logic
+    function toggleCheck(item) {
+        if(event.target.closest('.rule-actions')) return;
+        
+        const items = Array.from(document.querySelectorAll('.rule-item'));
+        const index = items.indexOf(item);
+        const isChecking = !item.classList.contains('checked');
+
+        if (isChecking) {
+            // Cannot check unless previous is checked (Except first item)
+            if (index > 0) {
+                const prevItem = items[index - 1];
+                if (!prevItem.classList.contains('checked')) {
+                    // Trigger visual shake error
+                    item.classList.add('shake');
+                    setTimeout(() => item.classList.remove('shake'), 400);
+                    return;
+                }
+            }
+            item.classList.add('checked');
+        } else {
+            // Unchecking: Must uncheck all subsequent items to maintain sequence
+            for (let i = index; i < items.length; i++) {
+                items[i].classList.remove('checked');
+            }
+        }
+        updateProgress();
+    }
+
+    function resetChecklist() {
+        document.querySelectorAll('.rule-item').forEach(i => i.classList.remove('checked'));
+        updateProgress();
+        const btn = document.querySelector('.btn-reset');
+        btn.innerHTML = "<span>✓</span> Ready!";
+        setTimeout(() => btn.innerHTML = "<span>↺</span> Reset Checklist", 1000);
+    }
+
+    function updateProgress() {
+        const items = document.querySelectorAll('.rule-item');
+        const total = items.length;
+        if(total === 0) {
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressText').innerText = '0% READY';
+            return;
+        }
+        const checked = document.querySelectorAll('.rule-item.checked').length;
+        const pct = Math.round((checked/total)*100);
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressText').innerText = pct + '% READY';
+        
+        const bar = document.getElementById('progressBar');
+        const txt = document.getElementById('progressText');
+        if(pct === 100) {
+            bar.style.backgroundColor = "var(--accent-primary)";
+            bar.style.boxShadow = "0 0 15px var(--accent-primary)";
+            txt.style.color = "var(--accent-primary)";
+            txt.innerText = "GO FOR LAUNCH 🚀";
+        } else {
+            bar.style.backgroundColor = "#00d2ff";
+            bar.style.boxShadow = "none";
+            txt.style.color = "#00d2ff";
+        }
+    }
+
+    document.getElementById('newRuleInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') addRule();
+    });
+
+    window.onload = function() {
+        const list = document.getElementById('rulesList');
+        {% if rules %}
+            {% for rule in rules %}
+                list.appendChild(createRuleElement({{ rule.id }}, "{{ rule.text|escapejs }}"));
+            {% endfor %}
+        {% else %}
+            list.innerHTML = '<li class="empty-state">No rules yet. Add your first rule above!</li>';
+        {% endif %}
+        updateProgress();
+    };
+    </script>
+</body>
+</html>

@@ -1,0 +1,457 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TradeSmart | Universal Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+   <style>
+    :root {
+        /* --- ORIGINAL VARIABLES --- */
+        --glass-border: 1px solid rgba(255, 255, 255, 0.06);
+        --text-main: #FFFFFF; 
+        --text-dim: #888888; 
+        --accent-green: #00FF94; 
+        --accent-red: #FF4D4D; 
+        --neon-red-glow: 0 0 15px rgba(255, 77, 77, 0.2);
+
+        /* --- NEW VARIABLES --- */
+        --bg-dark: #050505;
+        --card-glass: rgba(20, 20, 20, 0.6);
+        --card-border: rgba(255, 255, 255, 0.08);
+        
+        --accent-primary: #00ffa3; /* Electric Green */
+        --accent-secondary: #00d2ff; /* Cyber Blue */
+        
+        --glow-primary: 0 0 20px rgba(0, 255, 163, 0.4);
+        --glow-input: 0 0 0 2px rgba(0, 255, 163, 0.2);
+        
+        --anim-speed: 0.3s;
+    }
+
+    body { 
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--bg-dark); 
+        color: var(--text-main); 
+        margin: 0; 
+        display: flex; 
+        min-height: 100vh;
+        overflow-x: hidden;
+        overflow-y: auto;
+        width: 100%;
+    }
+
+    /* --- DYNAMIC BACKGROUND --- */
+    .ambient-bg {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        background: 
+            radial-gradient(circle at 15% 50%, rgba(0, 255, 163, 0.08) 0%, transparent 25%),
+            radial-gradient(circle at 85% 30%, rgba(0, 210, 255, 0.08) 0%, transparent 25%);
+        animation: breathe 10s ease-in-out infinite alternate;
+    }
+    @keyframes breathe {
+        0% { transform: scale(1); opacity: 0.8; }
+        100% { transform: scale(1.1); opacity: 1; }
+    }
+
+    /* --- MAIN CONTENT --- */
+    .main-content { 
+        margin-left: 280px; 
+        flex-grow: 1; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        padding: 120px 40px 60px 40px; 
+        min-height: 100vh;
+        position: relative;
+        box-sizing: border-box;
+    }
+
+    /* --- STATIONARY HEADER (DESKTOP) --- */
+    .page-title {
+        position: fixed;
+        top: 0;
+        left: 280px; 
+        right: 0;
+        z-index: 1000; /* High z-index to stay on top */
+        background: rgba(5, 5, 5, 0.95);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        margin: 0;
+        padding: 30px 50px; 
+        font-size: 32px; 
+        font-weight: 800; 
+        letter-spacing: -1px;
+        text-align: left; 
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        background-image: linear-gradient(to right, #fff, #aaa);
+        -webkit-background-clip: text; 
+        -webkit-text-fill-color: transparent;
+        animation: fadeUp 0.8s ease-out forwards;
+        box-sizing: border-box;
+    }
+
+    /* --- CALCULATOR CARD --- */
+    .calc-card {
+        width: 100%; max-width: 850px;
+        background: var(--card-glass);
+        border: 1px solid var(--card-border);
+        border-radius: 30px;
+        padding: 50px;
+        backdrop-filter: blur(40px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        opacity: 0; animation: fadeUp 0.8s ease-out 0.2s forwards;
+        position: relative; overflow: hidden;
+        margin-bottom: 50px;
+    }
+    
+    .calc-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0,255,163,0.5), transparent);
+    }
+
+    /* --- INPUTS & LABELS --- */
+    .input-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+    .input-group-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+    
+    label { 
+        display: block; font-size: 11px; font-weight: 700; color: var(--text-dim); 
+        text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; 
+    }
+
+    input, select {
+        width: 100%; padding: 16px 20px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        color: #fff; font-family: 'Outfit'; font-size: 15px;
+        outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-sizing: border-box;
+    }
+    
+    input:focus, select:focus {
+        border-color: var(--accent-primary);
+        box-shadow: var(--glow-input);
+        background: rgba(0,0,0,0.6);
+        transform: translateY(-2px);
+    }
+    
+    input[readonly] { 
+        background: rgba(255,255,255,0.03); border-color: transparent; 
+        color: var(--text-dim); cursor: not-allowed; 
+    }
+
+    .checkbox-wrapper {
+        margin-top: 12px; display: flex; align-items: center; gap: 10px;
+        font-size: 13px; color: var(--text-dim); cursor: pointer; transition: 0.2s;
+    }
+    .checkbox-wrapper:hover { color: var(--accent-primary); }
+    input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--accent-primary); }
+
+    .mode-tabs {
+        display: flex; background: rgba(0,0,0,0.3);
+        border-radius: 16px; padding: 5px; margin-bottom: 30px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .mode-tab {
+        flex: 1; text-align: center; padding: 14px;
+        font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        color: var(--text-dim); cursor: pointer; border-radius: 12px;
+        transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .mode-tab.active { background: var(--accent-primary); color: #000; box-shadow: var(--glow-primary); transform: scale(1.02); }
+
+    .specs-section {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+        border-radius: 16px; padding: 25px; margin-bottom: 30px;
+    }
+    .hidden-field { display: none; animation: fadeIn 0.4s; }
+
+    .result-container {
+        background: linear-gradient(145deg, rgba(20,20,20,0.8), rgba(10,10,10,0.9));
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 24px; padding: 35px;
+        display: grid; grid-template-columns: 1fr 1.5fr 1fr;
+        align-items: center; gap: 20px;
+    }
+    
+    .result-box { text-align: center; z-index: 2; }
+    .result-label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+    .result-value { font-size: 24px; font-weight: 700; color: #fff; }
+    .lot-display { font-size: 56px; font-weight: 800; color: #fff; letter-spacing: -2px; line-height: 1; transition: color 0.3s; }
+    .lot-display.active { color: var(--accent-primary); text-shadow: 0 0 40px rgba(0, 255, 163, 0.4); }
+    .risk-emoji { font-size: 40px; animation: float 3s ease-in-out infinite; }
+    .divider { width: 1px; height: 50px; background: rgba(255,255,255,0.1); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes pop { 0% { transform: scale(0.9); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+    @media screen and (max-width: 900px) {
+        body { flex-direction: column; overflow-x: hidden; }
+        .main-content { margin-left: 0; width: 100%; padding: 90px 20px 20px 20px; box-sizing: border-box; }
+        .input-group, .input-group-2 { grid-template-columns: 1fr; gap: 20px; }
+        .result-container { grid-template-columns: 1fr; padding: 25px; gap: 20px; }
+        .divider { width: 100%; height: 1px; margin: 10px 0; }
+        .lot-display { font-size: 44px; }
+        .calc-card { padding: 30px 20px; margin-bottom: 30px; }
+        .mode-tabs { flex-direction: column; gap: 5px; padding: 8px; }
+        .mode-tab { width: 100%; box-sizing: border-box; }
+    }
+   </style>
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+
+    <div class="main-content">
+
+        <div class="calc-card">
+            
+            <div class="mode-tabs">
+                <div class="mode-tab active" id="tab_contract" onclick="setMode('contract')">CFD / Forex Lots</div>
+                <div class="mode-tab" id="tab_futures" onclick="setMode('futures')">Futures Contracts</div>
+            </div>
+
+            <div class="input-group-2">
+                <div>
+                    <label>Account Balance ($)</label>
+                    <input type="number" id="balance" value="{{ live_balance|default:0 }}" oninput="calculate()" readonly>
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="auto_fill" checked onclick="toggleAutoFill()">
+                        <span>Sync with Live Account</span>
+                    </label>
+                </div>
+                <div>
+                    <label>Risk Per Trade (%)</label>
+                    <input type="number" id="risk_pct" value="0.5" step="0.1" oninput="calculate()">
+                </div>
+            </div>
+
+            <div class="specs-section">
+                <div id="field_contract">
+                    <label>Contract Size (Units)</label>
+                    <input type="number" id="contract_size" value="0" placeholder="e.g. 100000" oninput="calculate()">
+                    <div style="font-size: 11px; color: var(--text-dim); margin-top: 8px; display:flex; gap:10px;">
+                        <span style="cursor:pointer; border-bottom:1px dotted #555;" onclick="fillContract(100000)">Forex (100k)</span>
+                        <span style="cursor:pointer; border-bottom:1px dotted #555;" onclick="fillContract(100)">Gold (100)</span>
+                        <span style="cursor:pointer; border-bottom:1px dotted #555;" onclick="fillContract(1)">Crypto (1)</span>
+                    </div>
+                </div>
+
+                <div id="field_futures" class="hidden-field">
+                    <label>Point Value ($ per 1 full point)</label>
+                    <input type="number" id="point_value" value="5" placeholder="e.g. 5, 50, 2, 20" oninput="calculate()">
+                    <div style="font-size: 11px; color: var(--text-dim); margin-top: 8px; display:flex; gap:10px;">
+                        <span style="cursor:pointer; border-bottom:1px dotted #555;" onclick="fillPoint(50)">ES ($50)</span>
+                        <span style="cursor:pointer; border-bottom:1px dotted #555;" onclick="fillPoint(5)">MES ($5)</span>
+                        <span style="cursor:pointer; border-bottom:1px dotted #555;" onclick="fillPoint(20)">NQ ($20)</span>
+                        <span style="cursor:pointer; border-bottom:1px dotted #555;" onclick="fillPoint(2)">MNQ ($2)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div>
+                    <label>Entry Price</label>
+                    <input type="number" id="entry_price" placeholder="0.0000" step="any" oninput="calculate()">
+                </div>
+                <div>
+                    <label>Stop Loss Price</label>
+                    <input type="number" id="stop_price" placeholder="0.0000" step="any" oninput="calculate()">
+                </div>
+                <div id="spread_section">
+                    <label>Spread Type & Points</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="spread_type" onchange="calculate()" style="flex: 1; padding: 16px 10px;">
+                            <option value="forex">Forex</option>
+                            <option value="indices">Indices</option>
+                        </select>
+                        <input type="number" id="spread_input" placeholder="0" step="any" oninput="calculate()" style="flex: 1.5;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-container">
+                
+                <div class="result-box">
+                    <div class="result-label">Risk Amount</div>
+                    <div class="result-value" id="money_risk">$0.00</div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="result-box">
+                    <div class="result-label" id="result_label_size">Lot Size</div>
+                    <div class="lot-display" id="lot_result">0.00</div>
+                    <div style="font-size:11px; color:var(--text-dim); margin-top:5px; font-weight:600;" id="sl_dist_display">WAITING FOR DATA</div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="result-box">
+                    <div class="risk-emoji" id="risk_emoji">🛡️</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const originalBalance = {{ live_balance|default:0 }};
+        let currentMode = 'contract';
+
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            // FIX: Remove decimal places entirely if we are calculating Futures contracts
+            const decimals = currentMode === 'futures' ? 0 : 2;
+            
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = progress * (end - start) + start;
+                obj.innerHTML = value.toFixed(decimals);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function toggleAutoFill() {
+            const isChecked = document.getElementById('auto_fill').checked;
+            const balanceInput = document.getElementById('balance');
+            if (isChecked) {
+                balanceInput.value = originalBalance;
+                balanceInput.readOnly = true;
+                balanceInput.style.backgroundColor = "rgba(255,255,255,0.03)";
+                balanceInput.style.color = "var(--text-dim)";
+                balanceInput.style.cursor = "not-allowed";
+            } else {
+                balanceInput.readOnly = false;
+                balanceInput.style.backgroundColor = "rgba(0,0,0,0.4)";
+                balanceInput.style.color = "#fff";
+                balanceInput.style.cursor = "text";
+                balanceInput.focus();
+            }
+            calculate();
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab_' + mode).classList.add('active');
+            if(mode === 'contract') {
+                document.getElementById('field_contract').style.display = 'block';
+                document.getElementById('field_futures').style.display = 'none';
+                document.getElementById('result_label_size').innerText = 'Lot Size';
+                document.getElementById('spread_section').style.display = 'block';
+            } else {
+                document.getElementById('field_contract').style.display = 'none';
+                document.getElementById('field_futures').style.display = 'block';
+                document.getElementById('result_label_size').innerText = 'Contracts';
+                document.getElementById('spread_section').style.display = 'none';
+            }
+            calculate();
+        }
+
+        function fillContract(size) {
+            document.getElementById('contract_size').value = size;
+            calculate();
+        }
+
+        function fillPoint(val) {
+            document.getElementById('point_value').value = val;
+            calculate();
+        }
+
+        // --- CALCULATION CORE ---
+        function calculate() {
+            const balance = parseFloat(document.getElementById('balance').value) || 0;
+            const risk_pct = parseFloat(document.getElementById('risk_pct').value) || 0;
+            const entry = parseFloat(document.getElementById('entry_price').value) || 0;
+            const stop = parseFloat(document.getElementById('stop_price').value) || 0;
+            const spreadPoints = parseFloat(document.getElementById('spread_input').value) || 0;
+
+            const risk_amount = balance * (risk_pct / 100);
+            document.getElementById('money_risk').innerText = '$' + risk_amount.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+            // Calculate base price distance
+            let base_dist = Math.abs(entry - stop);
+            
+            let spread_decimal = 0;
+            
+            // Only apply spread math if we are NOT in futures mode
+            if (currentMode === 'contract') {
+                const spreadType = document.getElementById('spread_type').value;
+                if (spreadType === 'forex') {
+                    spread_decimal = spreadPoints * 0.00001; // 1 point = 0.00001 for Forex
+                } else if (spreadType === 'indices') {
+                    spread_decimal = spreadPoints * 0.01; // 1 point = 0.01 for Indices (e.g. 200 spread = 2.00)
+                }
+            }
+            
+            // Final distance including spread
+            let sl_dist = base_dist + spread_decimal;
+            
+            // RESET IF INVALID
+            if (sl_dist <= 0 || risk_amount <= 0 || entry === 0) {
+                // FIX: If resetting, make sure it formats as 0 (futures) or 0.00 (CFDs)
+                document.getElementById('lot_result').innerText = currentMode === 'futures' ? "0" : "0.00";
+                document.getElementById('lot_result').classList.remove('active');
+                document.getElementById('sl_dist_display').innerText = "WAITING FOR DATA";
+                document.getElementById('risk_emoji').innerText = "🛡️";
+                return;
+            }
+
+            let loss_per_unit = 0;
+
+            if (currentMode === 'contract') {
+                const contractSize = parseFloat(document.getElementById('contract_size').value) || 0;
+                loss_per_unit = sl_dist * contractSize;
+            } else if (currentMode === 'futures') {
+                const pointValue = parseFloat(document.getElementById('point_value').value) || 0;
+                loss_per_unit = sl_dist * pointValue;
+            }
+
+            if (loss_per_unit > 0) {
+                let size_result = risk_amount / loss_per_unit;
+                
+                // FIX: Force whole numbers for Futures, allow 2 decimal increments for Forex/CFD
+                if (currentMode === 'futures') {
+                    size_result = Math.floor(size_result); 
+                } else {
+                    size_result = Math.floor(size_result * 100) / 100;
+                }
+
+                const lotEl = document.getElementById('lot_result');
+                const currentVal = parseFloat(lotEl.innerText) || 0;
+                
+                // Trigger animation even if the decimal change is tiny
+                if(Math.abs(currentVal - size_result) > 0.001) {
+                    animateValue(lotEl, currentVal, size_result, 300);
+                    lotEl.classList.add('active');
+                    const emoji = document.getElementById('risk_emoji');
+                    emoji.innerText = "🚀";
+                    emoji.style.animation = "none";
+                    emoji.offsetHeight; 
+                    emoji.style.animation = "pop 0.3s ease-out";
+                }
+
+                if (currentMode === 'futures') {
+                    document.getElementById('sl_dist_display').innerText = `DISTANCE: ${sl_dist.toFixed(5)}`;
+                } else {
+                    document.getElementById('sl_dist_display').innerText = `DISTANCE (+ SPREAD): ${sl_dist.toFixed(5)}`;
+                }
+            }
+        }
+
+        window.onload = function() {
+            toggleAutoFill();
+            setMode('contract');
+        };
+    </script>
+</body>
+</html>
