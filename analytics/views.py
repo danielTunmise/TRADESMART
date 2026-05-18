@@ -146,6 +146,25 @@ def get_active_account(request):
 
     return current_account, user_accounts
 
+def extract_orders(orders_res):
+    """Safely extracts orders from SnapTrade API and converts objects to dictionaries."""
+    all_orders = []
+    # Check if the SDK returned a direct list OR an object with a .body
+    raw_list = orders_res if isinstance(orders_res, list) else getattr(orders_res, 'body', [])
+    
+    if not isinstance(raw_list, list): 
+        return []
+        
+    # Force SDK objects into readable dictionaries so .get() works safely
+    for o in raw_list:
+        if isinstance(o, dict): 
+            all_orders.append(o)
+        elif hasattr(o, 'to_dict'): 
+            all_orders.append(o.to_dict())
+        elif hasattr(o, '__dict__'): 
+            all_orders.append(o.__dict__)
+            
+    return all_orders
 
 # --- 1. AUTHENTICATION ---
 def register_view(request):
@@ -322,7 +341,7 @@ def dashboard(request):
 
                     # Fetch Orders (Deep Fetch: 365 Days)
                     orders_res = client.api.account_information.get_user_account_orders(ST_UID, ST_SECRET, acc_id, state='all', days=365)
-                    all_orders = orders_res.body if isinstance(orders_res.body, list) else []
+                    all_orders = extract_orders(orders_res) # <-- UPDATED LINE
                     
                     chron_orders = sorted(all_orders, key=lambda x: x.get('time_executed') or x.get('time_placed') or '0000-00-00', reverse=False)
                     inventory = {} 
@@ -742,7 +761,7 @@ def daily_trades(request, year, month, day):
                 acc_id = cloud_accounts[0]['id']
                 # DEEP FETCH: 365 Days
                 orders_res = client.api.account_information.get_user_account_orders(ST_UID, ST_SECRET, acc_id, state='all', days=365)
-                all_orders = orders_res.body if isinstance(orders_res.body, list) else []
+                all_orders = extract_orders(orders_res) # <-- UPDATED LINE
                 
                 chron_orders = sorted(all_orders, key=lambda x: x.get('time_executed') or x.get('time_placed') or '0000-00-00', reverse=False)
                 inventory = {} 
@@ -1171,7 +1190,7 @@ def journal(request):
                 
                 orders_res = client.api.account_information.get_user_account_orders(ST_UID, ST_SECRET, acc_id, state='all', days=365)
                 
-                all_orders = orders_res.body if hasattr(orders_res, 'body') and isinstance(orders_res.body, list) else []
+                all_orders = extract_orders(orders_res) # <-- UPDATED LINE
                 print(f"[DEBUG] Total raw orders extracted: {len(all_orders)}")
                 
                 if len(all_orders) > 0:
@@ -1689,7 +1708,7 @@ def trade_detail(request, trade_id):
                 acc_id = cloud_accounts[0]['id']
                 # DEEP FETCH: 365 Days
                 orders_res = client.api.account_information.get_user_account_orders(ST_UID, ST_SECRET, acc_id, state='all', days=365)
-                all_orders = orders_res.body if isinstance(orders_res.body, list) else []
+                all_orders = extract_orders(orders_res) # <-- UPDATED LINE
                 chron_orders = sorted(all_orders, key=lambda x: x.get('time_executed') or '0000')
                 
                 inventory = {} 
@@ -2675,7 +2694,7 @@ def reports_dashboard(request):
                 acc_id = cloud_accounts[0]['id']
                 # DEEP FETCH: 365 Days
                 orders_res = client.api.account_information.get_user_account_orders(ST_UID, ST_SECRET, acc_id, state='all', days=365)
-                all_orders = orders_res.body if isinstance(orders_res.body, list) else []
+                all_orders = extract_orders(orders_res) # <-- UPDATED LINE
 
                 # Sort for FIFO
                 chron_orders = sorted(all_orders, key=lambda x: x.get('time_executed') or x.get('time_placed') or '0000-00-00', reverse=False)
@@ -2842,7 +2861,7 @@ def get_report_story(request, year, month):
                 acc_id = cloud_accounts[0]['id']
                 # DEEP FETCH: 365 Days
                 orders_res = client.api.account_information.get_user_account_orders(ST_UID, ST_SECRET, acc_id, state='all', days=365)
-                all_orders = orders_res.body if isinstance(orders_res.body, list) else []
+                all_orders = extract_orders(orders_res) # <-- UPDATED LINE
 
                 # Sort for FIFO
                 chron_orders = sorted(all_orders, key=lambda x: x.get('time_executed') or x.get('time_placed') or '0000-00-00', reverse=False)
