@@ -3127,102 +3127,6 @@ def get_report_story(request, year, month):
     dominant_emotion = max(emotions_tally, key=emotions_tally.get) if emotions_tally else "NEUTRAL"
     dominant_strategy = max(strategies_tally, key=strategies_tally.get) if strategies_tally else "General Discretionary"
 
-    # =========================================================
-    # MODULE D: PATTERN FINDER (PCA + APRIORI)
-    # =========================================================
-    hidden_pattern_insight = "Need more trades to find complex patterns."
-    pca_insight = ""
-
-    if len(trade_list) >= 20: # Need enough data for association rules
-        try:
-            import pandas as pd
-            import numpy as np
-            from sklearn.decomposition import PCA
-            from sklearn.preprocessing import StandardScaler
-            from mlxtend.frequent_patterns import apriori, association_rules
-
-            # --- 1. Data Preparation for ML ---
-            ml_data = []
-            for t in trade_list:
-                # Skip invalid rows
-                if not getattr(t, 'open_time', None): continue
-                
-                pnl = safe_pnl(t)
-                is_win = pnl > 0
-                
-                # We categorize continuous variables into discrete "baskets" for Apriori
-                hour = t.open_time.hour
-                if hour < 6: time_of_day = "Asian Session"
-                elif hour < 12: time_of_day = "London Session"
-                elif hour < 17: time_of_day = "NY Session"
-                else: time_of_day = "Late NY / Close"
-
-                ml_data.append({
-                    'Symbol': getattr(t, 'symbol', 'UNKNOWN'),
-                    'Direction': getattr(t, 'direction', getattr(t, 'type', 'LONG')),
-                    'TimeOfDay': time_of_day,
-                    'DayOfWeek': t.open_time.strftime("%A"),
-                    'Result': 'WIN' if is_win else 'LOSS',
-                    # Numeric values kept for PCA
-                    'Raw_Lot': safe_val(t, 'lot_size'),
-                    'Raw_Duration': (t.close_time - t.open_time).total_seconds() if getattr(t, 'close_time', None) else 0,
-                    'Raw_PnL': pnl
-                })
-            
-            df = pd.DataFrame(ml_data)
-
-            # --- 2. Principal Component Analysis (PCA) ---
-            # Finding what numerical factors actually drive your PnL
-            features = ['Raw_Lot', 'Raw_Duration']
-            X_num = df[features].fillna(0)
-            
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X_num)
-            
-            pca = PCA(n_components=1)
-            pca.fit(X_scaled)
-            
-            # Look at the principal component vector to see what impacts variance the most
-            components = pca.components_[0]
-            if abs(components[0]) > abs(components[1]) * 1.5:
-                pca_insight = "PCA indicates your Position Size (Lot) is the primary driver of your PnL variance, far overriding hold times."
-            elif abs(components[1]) > abs(components[0]) * 1.5:
-                pca_insight = "PCA indicates your Hold Duration dictates your PnL outcomes more than your sizing."
-            else:
-                pca_insight = "PCA shows balanced variance between your sizing and duration."
-
-            # --- 3. Apriori (Association Rules) ---
-            # Prepare data: Apriori needs one-hot encoded binary columns
-            apriori_df = df[['Symbol', 'Direction', 'TimeOfDay', 'DayOfWeek', 'Result']]
-            encoded_df = pd.get_dummies(apriori_df)
-            
-            # Find frequent itemsets (combinations that happen at least 5% of the time)
-            frequent_itemsets = apriori(encoded_df.astype(bool), min_support=0.05, use_colnames=True)
-            
-            if not frequent_itemsets.empty:
-                # Generate rules
-                rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.6)
-                
-                # Filter for rules where the "consequent" (the outcome) is a WIN
-                win_rules = rules[rules['consequents'] == frozenset({'Result_WIN'})]
-                
-                if not win_rules.empty:
-                    # Sort by Lift (strength of the rule over random chance) and Confidence
-                    best_rules = win_rules.sort_values(by=['lift', 'confidence'], ascending=[False, False])
-                    top_rule = best_rules.iloc[0]
-                    
-                    # Clean up the output string
-                    antecedents = [list(x)[0].split('_')[1] for x in top_rule['antecedents']]
-                    conditions_str = " + ".join(antecedents)
-                    confidence_pct = top_rule['confidence'] * 100
-                    
-                    hidden_pattern_insight = f"When you trade [ {conditions_str} ], you win {confidence_pct:.0f}% of the time."
-
-        except ImportError:
-            hidden_pattern_insight = "Machine learning libraries (mlxtend, sklearn) are missing."
-        except Exception as e:
-            hidden_pattern_insight = f"Pattern calculation error: {str(e)[:50]}"
-
     # --- BUILD SLIDES ---
     slides = []
     month_name = datetime(year, month, 1).strftime("%B")
@@ -3386,23 +3290,6 @@ def get_report_story(request, year, month):
 
     # 29. Strategy Cluster (AI Generated)
     slides.append({'type': 'stat', 'title': "Dominant Strategy", 'value': dominant_strategy, 'subtitle': "The AI pattern recognition engine classified your primary execution style.", 'value_style': 'color: #b19cd9; font-size: 36px; line-height: 1.2;'})
-
-    # MODULE D SLIDES
-    slides.append({
-        'type': 'insight', 
-        'title': "PCA Variance Analysis", 
-        'value': "The Math Behind the PnL", 
-        'subtitle': pca_insight if pca_insight else "Insufficient data for Principal Component Analysis.", 
-        'value_style': 'color: #00d2ff; font-size: 24px;'
-    })
-
-    slides.append({
-        'type': 'insight', 
-        'title': "Apriori Pattern Finder", 
-        'value': "Hidden Edge Discovered", 
-        'subtitle': hidden_pattern_insight, 
-        'value_style': 'color: #FFD700; font-size: 24px;'
-    })
 
     # 30. Final Verdict
     personality = "The Strategist"
