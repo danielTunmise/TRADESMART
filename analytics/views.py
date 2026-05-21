@@ -3127,6 +3127,153 @@ def get_report_story(request, year, month):
     dominant_emotion = max(emotions_tally, key=emotions_tally.get) if emotions_tally else "NEUTRAL"
     dominant_strategy = max(strategies_tally, key=strategies_tally.get) if strategies_tally else "General Discretionary"
 
+    # --- 4. BEHAVIORAL ML FLAGS (K-Means — same engine as dashboard) ---
+    overconfidence_count = 0
+    revenge_count = 0
+    fear_count = 0
+
+    try:
+        from sklearn.cluster import KMeans
+        from sklearn.preprocessing import StandardScaler
+        import numpy as np
+
+        # Only run for manual/CSV accounts (DB source)
+        if current_account and not current_account.snaptrade_user_id:
+            baseline_qs = Trade.objects.filter(
+                account=current_account
+            ).exclude(symbol='BALANCE').order_by('open_time')
+
+            def _bsf(v):
+                try: return float(v) if v is not None else 0.0
+                except: return 0.0
+
+            b_streak = 0; b_last_close = None; X_base = []
+            for bt in baseline_qs:
+                b_lot = _bsf(bt.lot_size)
+                b_pnl = _bsf(bt.profit)
+                if b_lot <= 0: continue
+                b_td = 86400
+                if b_last_close and bt.open_time:
+                    try:
+                        b_td = min(abs((bt.open_time - b_last_close).total_seconds()), 86400)
+                    except: pass
+                X_base.append([b_lot, b_pnl, b_streak, b_td])
+                if b_pnl < 0: b_streak -= 1
+                elif b_pnl > 0: b_streak += 1
+                if bt.close_time: b_last_close = bt.close_time
+
+            if len(X_base) >= 4:
+                X_base_arr = np.array(X_base)
+                sc_beh = StandardScaler()
+                Xs_beh = sc_beh.fit_transform(X_base_arr)
+                km_beh = KMeans(n_clusters=4, random_state=42, n_init='auto')
+                km_beh.fit(Xs_beh)
+                cent_beh = sc_beh.inverse_transform(km_beh.cluster_centers_)
+
+                oc_c  = int(np.argmax(cent_beh[:, 0]))
+                rev_c = int(np.argmin(cent_beh[:, 2]))
+                if oc_c == rev_c:
+                    rev_c = int(np.argsort(cent_beh[:, 2])[1])
+                rem_c   = [i for i in range(4) if i not in [oc_c, rev_c]]
+                feat_c  = int(min(rem_c, key=lambda i: cent_beh[i, 0]))
+
+                med_lot_beh = float(np.median(X_base_arr[:, 0]))
+                med_pnl_beh = float(np.median(X_base_arr[:, 1]))
+
+                # Predict cluster membership for every trade in this month
+                m_streak = 0; m_last_close = None; X_month = []
+                month_sorted = sorted(trade_list, key=lambda t: t.open_time if t.open_time else t.close_time)
+                for mt in month_sorted:
+                    m_lot = _bsf(getattr(mt, 'lot_size', 0))
+                    m_pnl = safe_pnl(mt)
+                    if m_lot <= 0: continue
+                    m_td = 86400
+                    if m_last_close and mt.open_time:
+                        try:
+                            m_td = min(abs((mt.open_time - m_last_close).total_seconds()), 86400)
+                        except: pass
+                    X_month.append([m_lot, m_pnl, m_streak, m_td])
+                    if m_pnl < 0: m_streak -= 1
+                    elif m_pnl > 0: m_streak += 1
+                    if mt.close_time: m_last_close = mt.close_time
+
+                if X_month:
+                    X_month_arr = np.array(X_month)
+                    preds_beh = km_beh.predict(sc_beh.transform(X_month_arr))
+                    for pred, row in zip(preds_beh, X_month_arr):
+                        lot_t, pnl_t = row[0], row[1]
+                        if pred == oc_c and lot_t > med_lot_beh:
+                            overconfidence_count += 1
+                        if pred == rev_c and pnl_t < 0:
+                            revenge_count += 1
+                        if pred == feat_c and pnl_t > 0 and pnl_t <= abs(med_pnl_beh):
+                            fear_count += 1
+    except Exception:
+        pass
+
+    # --- 5. MONTHLY STRENGTH / WEAKNESS / ACTIONABLE ADVICE ---
+    no_sl_count_m = 0
+    if current_account and not current_account.snaptrade_user_id:
+        no_sl_count_m = Trade.objects.filter(
+            account=current_account,
+            close_time__year=year,
+            close_time__month=month,
+            stop_loss=0
+        ).count()
+
+    month_strengths = []
+    month_weaknesses = []
+    month_advice = []
+
+    # Strengths
+    if win_rate >= 50:
+        month_strengths.append(f"High precision execution ({win_rate}% win rate) — your entries are well-timed.")
+    elif profit_factor >= 1.0:
+        month_strengths.append(f"Resilient strategy: despite a {win_rate}% win rate, your Profit Factor ({profit_factor}) keeps you net positive.")
+    else:
+        month_strengths.append("Building phase — every consistent trader started here. Focus on the process, not the P&L.")
+
+    if avg_win > avg_loss:
+        month_strengths.append(f"Positive risk/reward: avg win (${avg_win:,.0f}) exceeds avg loss (${avg_loss:,.0f}).")
+
+    if overconfidence_count == 0 and revenge_count == 0 and fear_count == 0:
+        month_strengths.append("Behaviorally clean: the ML engine detected no overconfidence, revenge, or fear patterns this month.")
+
+    if max_win_streak >= 3:
+        month_strengths.append(f"You hit a {max_win_streak}-trade win streak — evidence your system has a real edge when applied consistently.")
+
+    # Weaknesses
+    if no_sl_count_m > 0:
+        month_weaknesses.append(f"Naked risk exposure: {no_sl_count_m} trade(s) taken without a Stop Loss this month.")
+    if avg_win <= avg_loss:
+        month_weaknesses.append(f"Inverted risk profile: avg loss (${avg_loss:,.0f}) exceeds avg win (${avg_win:,.0f}). You are paying too much per mistake.")
+    elif profit_factor < 1.0:
+        month_weaknesses.append(f"Negative expectancy (PF: {profit_factor}): gross losses are eroding gross profits.")
+    if overconfidence_count > 0:
+        month_weaknesses.append(f"Overconfidence in {overconfidence_count} trade(s): position sizes spiked above your median after wins.")
+    if revenge_count > 0:
+        month_weaknesses.append(f"Revenge trading in {revenge_count} trade(s): rapid loss-chasing re-entries detected.")
+    if fear_count > 0:
+        month_weaknesses.append(f"Fear-based exits in {fear_count} trade(s): profits were cut well below your median P&L.")
+    if max_loss_streak >= 4:
+        month_weaknesses.append(f"Drawdown control: a {max_loss_streak}-trade losing streak hit — a daily loss limit rule is needed.")
+
+    # Actionable Advice
+    if no_sl_count_m > 0:
+        month_advice.append("Set your Stop Loss before you enter — no exceptions. A trade without a SL is speculation, not trading.")
+    if overconfidence_count > 0:
+        month_advice.append("After every win, reset your lot size to your base unit. Wins are not permission to upsize.")
+    if revenge_count > 0:
+        month_advice.append("After two consecutive losses, close your platform for at least 30 minutes before touching another trade.")
+    if fear_count > 0:
+        month_advice.append("Define your Take Profit target before entry and commit to it — premature exits compound into substantial lost profit over time.")
+    if avg_win <= avg_loss:
+        month_advice.append(f"Target a minimum 1.5:1 reward-to-risk on every setup. Your current average RR is {rr_ratio}:1.")
+    if max_loss_streak >= 4:
+        month_advice.append(f"Implement a hard daily loss limit (e.g. 2% of account). Your worst streak was {max_loss_streak} losses — a rule would have contained the damage.")
+    if not month_advice:
+        month_advice.append("Keep executing your system with discipline. Consistency is the only edge that compounds — stay the course next month.")
+
     # --- BUILD SLIDES ---
     slides = []
     month_name = datetime(year, month, 1).strftime("%B")
@@ -3291,7 +3438,99 @@ def get_report_story(request, year, month):
     # 29. Strategy Cluster (AI Generated)
     slides.append({'type': 'stat', 'title': "Dominant Strategy", 'value': dominant_strategy, 'subtitle': "The AI pattern recognition engine classified your primary execution style.", 'value_style': 'color: #b19cd9; font-size: 36px; line-height: 1.2;'})
 
-    # 30. Final Verdict
+    # 30. Behavioral ML Flags
+    if overconfidence_count > 0 or revenge_count > 0 or fear_count > 0:
+        beh_badges = ""
+        if overconfidence_count > 0:
+            beh_badges += (
+                f"<div style='background:#FF4D4D18; border:1px solid #FF4D4D; border-radius:8px;"
+                f" padding:14px 22px; text-align:center; min-width:90px;'>"
+                f"<div style='font-size:30px; font-weight:700; color:#FF4D4D;'>{overconfidence_count}×</div>"
+                f"<div style='font-size:11px; color:#aaa; margin-top:4px; letter-spacing:1px;'>OVERCONFIDENCE</div></div>"
+            )
+        if revenge_count > 0:
+            beh_badges += (
+                f"<div style='background:#FF8C0018; border:1px solid #FF8C00; border-radius:8px;"
+                f" padding:14px 22px; text-align:center; min-width:90px;'>"
+                f"<div style='font-size:30px; font-weight:700; color:#FF8C00;'>{revenge_count}×</div>"
+                f"<div style='font-size:11px; color:#aaa; margin-top:4px; letter-spacing:1px;'>REVENGE</div></div>"
+            )
+        if fear_count > 0:
+            beh_badges += (
+                f"<div style='background:#00d2ff18; border:1px solid #00d2ff; border-radius:8px;"
+                f" padding:14px 22px; text-align:center; min-width:90px;'>"
+                f"<div style='font-size:30px; font-weight:700; color:#00d2ff;'>{fear_count}×</div>"
+                f"<div style='font-size:11px; color:#aaa; margin-top:4px; letter-spacing:1px;'>FEAR EXITS</div></div>"
+            )
+        beh_html = (
+            f"Your ML engine flagged these behavioral patterns this month.<br>"
+            f"<div style='display:flex; gap:16px; justify-content:center; margin-top:20px; flex-wrap:wrap;'>{beh_badges}</div>"
+        )
+        slides.append({
+            'type': 'loss',
+            'title': "Behavioral Flags 🧠",
+            'value': "Patterns Detected",
+            'subtitle': beh_html,
+            'value_style': 'color: #FF8C00; font-size: 32px;'
+        })
+    else:
+        slides.append({
+            'type': 'profit',
+            'title': "Behavioral Flags 🧠",
+            'value': "All Clear 💚",
+            'subtitle': "The ML engine found no overconfidence, revenge trading, or fear-based exits this month. Textbook execution.",
+            'value_style': 'color: #00FF94;'
+        })
+
+    # 31. This Month's Strengths
+    if month_strengths:
+        str_items = "".join([
+            f"<div style='margin:7px 0; padding:10px 16px; background:#00FF9414;"
+            f" border-left:3px solid #00FF94; border-radius:4px; font-size:13px;"
+            f" color:#d0d0d0; text-align:left;'>✅ {s}</div>"
+            for s in month_strengths
+        ])
+        slides.append({
+            'type': 'profit',
+            'title': "This Month's Edge 💪",
+            'value': "",
+            'subtitle': str_items,
+            'value_style': 'color: #00FF94;'
+        })
+
+    # 32. This Month's Weaknesses
+    if month_weaknesses:
+        wk_items = "".join([
+            f"<div style='margin:7px 0; padding:10px 16px; background:#FF4D4D14;"
+            f" border-left:3px solid #FF4D4D; border-radius:4px; font-size:13px;"
+            f" color:#d0d0d0; text-align:left;'>⚠️ {w}</div>"
+            for w in month_weaknesses
+        ])
+        slides.append({
+            'type': 'loss',
+            'title': "This Month's Leaks 🚨",
+            'value': "",
+            'subtitle': wk_items,
+            'value_style': 'color: #FF4D4D;'
+        })
+
+    # 33. Actionable Advice
+    if month_advice:
+        adv_items = "".join([
+            f"<div style='margin:7px 0; padding:10px 16px; background:#FFD70014;"
+            f" border-left:3px solid #FFD700; border-radius:4px; font-size:13px;"
+            f" color:#d0d0d0; text-align:left;'>→ {a}</div>"
+            for a in month_advice
+        ])
+        slides.append({
+            'type': 'insight',
+            'title': "The Fix 🔧",
+            'value': "",
+            'subtitle': adv_items,
+            'value_style': 'color: #FFD700;'
+        })
+
+    # 34. Final Verdict
     personality = "The Strategist"
     sub = "Consistent and calculated."
     if total_pnl < 0: personality = "The Grinder"; sub = "Rough month, but you're building resilience."
